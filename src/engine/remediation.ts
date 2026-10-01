@@ -36,7 +36,10 @@ export function proposeRemediation(events: AnswerEvent[], o: RemediationOptions)
   const latest = new Map<string, Map<string, AnswerEvent>>();
   const errors = new Map<string, Map<ErrorType, number>>();
 
+  const seen = new Set<string>();
   for (const ev of events) {
+    if (seen.has(ev.id)) continue;
+    seen.add(ev.id);
     if (ev.ts < since || ev.ts > o.now) continue;
     const key = cardKey(ev.wordId, ev.direction);
 
@@ -46,7 +49,7 @@ export function proposeRemediation(events: AnswerEvent[], o: RemediationOptions)
       latest.set(key, perStudent);
     }
     const current = perStudent.get(ev.studentId);
-    if (!current || ev.ts >= current.ts) perStudent.set(ev.studentId, ev);
+    if (!current || ev.ts > current.ts || (ev.ts === current.ts && ev.id > current.id)) perStudent.set(ev.studentId, ev);
 
     if (ev.errorType) {
       let counts = errors.get(key);
@@ -61,7 +64,7 @@ export function proposeRemediation(events: AnswerEvent[], o: RemediationOptions)
   const proposals: RemediationProposal[] = [];
   for (const [key, perStudent] of latest) {
     const workedCount = perStudent.size;
-    const missStudents = [...perStudent.entries()].filter(([, e]) => e.verdict !== 'juste').map(([id]) => id);
+    const missStudents = [...perStudent.entries()].filter(([, e]) => e.verdict !== 'juste').map(([id]) => id).sort();
     const share = workedCount === 0 ? 0 : missStudents.length / workedCount;
     const triggered =
       missStudents.length >= minStudents || (missStudents.length >= minStudentsForShare && share >= minShare);
@@ -70,7 +73,7 @@ export function proposeRemediation(events: AnswerEvent[], o: RemediationOptions)
     let topError: ErrorType | null = null;
     let topCount = 0;
     for (const [type, count] of errors.get(key) ?? []) {
-      if (count > topCount) {
+      if (count > topCount || (count === topCount && topError !== null && type < topError)) {
         topError = type;
         topCount = count;
       }

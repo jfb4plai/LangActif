@@ -82,4 +82,21 @@ describe('proposeRemediation', () => {
     const out = proposeRemediation(events, { now: NOW });
     expect(out.map((p) => p.key)).toEqual(['w2:l_to_fr', 'w1:fr_to_l']);
   });
+  it("ne dépend pas de l'ordre des événements à ts identique", () => {
+    const e1 = ev('a', { id: 'x1' });
+    const e2 = ev('b', { id: 'x2' });
+    const e3 = ev('c', { id: 'x3' });
+    const e4 = ok('c', { id: 'x4' });
+    const forward = proposeRemediation([e1, e2, e3, e4], { now: NOW });
+    const backward = proposeRemediation([e4, e3, e2, e1], { now: NOW });
+    expect(JSON.stringify(backward)).toBe(JSON.stringify(forward));
+  });
+
+  it("ignore les doublons d'événement (même id)", () => {
+    const a = ev('a', { id: 'y1', errorType: 'orthographe_proche' });
+    const b = ev('b', { id: 'y2', errorType: 'sans_reponse' });
+    const out = proposeRemediation([a, b, b, b], { now: NOW });
+    expect(out).toHaveLength(1);
+    expect(out[0].topError).toBe('orthographe_proche');
+  });
 });
