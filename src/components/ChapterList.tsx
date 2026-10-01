@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { listChapters, type ChapterSummary } from '../lib/chapters';
 import { langueLabel } from '../lib/labels';
+import { useFocusOnMount } from '../lib/useFocusOnMount';
 
 interface Props {
   client: SupabaseClient;
@@ -12,6 +13,7 @@ interface Props {
 export function ChapterList({ client, onOpen, onImport }: Props) {
   const [chapters, setChapters] = useState<ChapterSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const headingRef = useFocusOnMount<HTMLHeadingElement>();
 
   useEffect(() => {
     let alive = true;
@@ -26,7 +28,7 @@ export function ChapterList({ client, onOpen, onImport }: Props) {
   return (
     <section>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <h1 className="font-serif" style={{ fontSize: 26 }}>Mes chapitres</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="font-serif" style={{ fontSize: 26 }}>Mes chapitres</h1>
         <button type="button" className="plai-btn" onClick={onImport}>Importer un chapitre</button>
       </div>
 
@@ -46,11 +48,11 @@ export function ChapterList({ client, onOpen, onImport }: Props) {
           onClick={() => onOpen(c.id)}
         >
           <strong>{c.numero}. {c.titre}</strong>
-          <div style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="lang-badge">{langueLabel(c.langue)}</span>
             <span style={{ color: 'var(--text2)' }}>Niveau {c.niveau}</span>
             <span style={{ color: 'var(--text2)' }}>{c.listsCount} {c.listsCount > 1 ? 'listes' : 'liste'}</span>
-          </div>
+          </span>
         </button>
       ))}
     </section>

@@ -52,3 +52,20 @@ table.lang-table th {
     display: none;
   }
 }
+
+/* Règle PLAI : 16 px minimum, contrastes lisibles */
+.plai-label,
+.plai-error,
+.plai-success,
+.plai-footer,
+.lang-badge {
+  font-size: 16px;
+}
+.plai-footer,
+.plai-empty {
+  color: var(--text2);
+}
+/* Focus programmatique sur le titre : il n'est pas interactif */
+h1:focus {
+  outline: none;
+}

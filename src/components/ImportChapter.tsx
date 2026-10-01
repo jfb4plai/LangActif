@@ -7,6 +7,7 @@ import { formatIssue } from '../lib/formatIssue';
 import { toImportPayload } from '../lib/importPayload';
 import { langueLabel } from '../lib/labels';
 import { readXlsxInWorker } from '../lib/readXlsxInWorker';
+import { useFocusOnMount } from '../lib/useFocusOnMount';
 import { FormField } from './FormField';
 
 interface Props {
@@ -26,6 +27,7 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const headingRef = useFocusOnMount<HTMLHeadingElement>();
   const requestId = useRef(0);
   const [templateError, setTemplateError] = useState<string | null>(null);
 
@@ -87,7 +89,7 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
   return (
     <section>
       <button type="button" className="plai-btn-ghost" onClick={onCancel} style={{ marginBottom: '1rem' }}>Retour aux chapitres</button>
-      <h1 className="font-serif" style={{ fontSize: 26, marginBottom: '1rem' }}>Importer un chapitre</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="font-serif" style={{ fontSize: 26, marginBottom: '1rem' }}>Importer un chapitre</h1>
 
       <div className="plai-card">
         <h2 className="font-serif" style={{ fontSize: 20, marginBottom: 8 }}>1. Télécharger le modèle</h2>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
+import { useFocusOnMount } from '../lib/useFocusOnMount';
 import { FormField } from './FormField';
 
 type Props = {
@@ -18,6 +19,7 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const headingRef = useFocusOnMount<HTMLHeadingElement>();
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -73,7 +75,7 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
   if (passwordRecovery) {
     return (
       <div className="plai-card" style={{ maxWidth: 420, margin: '2rem auto' }}>
-        <h1 className="font-serif" style={{ fontSize: 24, marginBottom: '1rem' }}>Nouveau mot de passe</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="font-serif" style={{ fontSize: 24, marginBottom: '1rem' }}>Nouveau mot de passe</h1>
         <form onSubmit={handleUpdatePassword}>
           <FormField label="Nouveau mot de passe" required help="Il remplace l'ancien pour toutes les applications PLAI qui utilisent ce compte.">
             <input
@@ -99,7 +101,7 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
 
   return (
     <div className="plai-card" style={{ maxWidth: 420, margin: '2rem auto' }}>
-      <h1 className="font-serif" style={{ fontSize: 24, marginBottom: '0.25rem' }}>{title}</h1>
+      <h1 ref={headingRef} tabIndex={-1} className="font-serif" style={{ fontSize: 24, marginBottom: '0.25rem' }}>{title}</h1>
       <p style={{ color: 'var(--text2)', marginBottom: '1rem' }}>
         LangActif : vocabulaire de langues étrangères pour vos élèves, avec suivi de leurs résultats.
       </p>

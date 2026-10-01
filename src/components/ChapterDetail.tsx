@@ -1,12 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deleteChapter, getChapter, type ChapterDetail as Detail } from '../lib/chapters';
 import { langueLabel } from '../lib/labels';
+import { useFocusOnMount } from '../lib/useFocusOnMount';
 
 interface Props {
   client: SupabaseClient;
   id: string;
   onBack: () => void;
+}
+
+/** Titre monté seulement quand le chapitre est chargé : le focus s'y place à ce moment. */
+function ChapterTitle({ children }: { children: ReactNode }) {
+  const ref = useFocusOnMount<HTMLHeadingElement>();
+  return (
+    <h1 ref={ref} tabIndex={-1} className="font-serif" style={{ fontSize: 26 }}>
+      {children}
+    </h1>
+  );
 }
 
 export function ChapterDetail({ client, id, onBack }: Props) {
@@ -51,7 +62,7 @@ export function ChapterDetail({ client, id, onBack }: Props) {
   return (
     <section>
       <button type="button" className="plai-btn-ghost" onClick={onBack} style={{ marginBottom: '1rem' }}>Retour aux chapitres</button>
-      <h1 className="font-serif" style={{ fontSize: 26 }}>{chapter.numero}. {chapter.titre}</h1>
+      <ChapterTitle>{chapter.numero}. {chapter.titre}</ChapterTitle>
       <div style={{ margin: '8px 0 1.25rem', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <span className="lang-badge">{langueLabel(chapter.langue)}</span>
         <span style={{ color: 'var(--text2)' }}>Niveau {chapter.niveau}</span>
@@ -76,7 +87,10 @@ export function ChapterDetail({ client, id, onBack }: Props) {
                   <td>{w.fr}</td>
                   <td>{w.article ? `${w.article} ${w.cible}` : w.cible}</td>
                   <td>{[...w.synonymes_fr, ...w.synonymes_cible].join(' ; ')}</td>
-                  <td>{w.phrase_cible ?? ''}</td>
+                  <td>
+                    {w.phrase_cible ?? ''}
+                    {w.phrase_fr && <span style={{ display: 'block', color: 'var(--text2)' }}>{w.phrase_fr}</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
