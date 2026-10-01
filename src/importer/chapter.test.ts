@@ -143,3 +143,53 @@ describe('parseChapter, erreurs', () => {
     expect(issues.map((i) => i.column)).toEqual(expect.arrayContaining(['fr', 'cible']));
   });
 });
+
+describe('parseChapter, article, séparateurs, langue', () => {
+  it('rejette une cible néerlandaise qui commence par un article', () => {
+    const r = parseChapter(book({
+      lists: [sheet('L', ['fr', 'cible', 'article'], [['vélo', 'de fiets', 'de']])],
+    }));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.issues).toContainEqual({
+      sheet: 'L', row: 2, column: 'cible',
+      message: 'Le mot « de fiets » commence par un article : mettre l\'article dans la colonne « article »',
+    });
+  });
+
+  it('ne s\'applique pas à l\'anglais (article dans la cible)', () => {
+    const r = parseChapter(book({
+      meta: { langue: 'en-GB', niveau: 'A1', titre: 'T', numero: '1' },
+      lists: [sheet('L', ['fr', 'cible'], [['le thé', 'the tea']])],
+    }));
+    expect(r.ok).toBe(true);
+  });
+
+  it('signale une virgule dans les synonymes', () => {
+    const r = parseChapter(book({
+      lists: [sheet('L', ['fr', 'cible', 'article', 'synonymes_cible', 'synonymes_fr'], [['vélo', 'fiets', 'de', 'rijwiel, velo', 'a, b']])],
+    }));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    const msg = 'Séparateur « , » dans les synonymes : utiliser « ; »';
+    expect(r.issues).toContainEqual({ sheet: 'L', row: 2, column: 'synonymes_cible', message: msg });
+    expect(r.issues).toContainEqual({ sheet: 'L', row: 2, column: 'synonymes_fr', message: msg });
+  });
+
+  it('accepte « ; » dans les synonymes', () => {
+    const r = parseChapter(book({
+      lists: [sheet('L', ['fr', 'cible', 'article', 'synonymes_cible'], [['vélo', 'fiets', 'de', 'rijwiel; velo']])],
+    }));
+    expect(r.ok).toBe(true);
+  });
+
+  it('accepte la langue sans tenir compte de la casse et stocke la valeur canonique', () => {
+    const a = parseChapter(book({ meta: { langue: 'NL-BE', niveau: 'A1', titre: 'T', numero: '1' } }));
+    expect(a.ok && a.chapter.langue).toBe('nl-BE');
+    const b = parseChapter(book({
+      meta: { langue: 'en-gb', niveau: 'A1', titre: 'T', numero: '1' },
+      lists: [sheet('L', ['fr', 'cible'], [['chaise', 'chair']])],
+    }));
+    expect(b.ok && b.chapter.langue).toBe('en-GB');
+  });
+});

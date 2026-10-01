@@ -60,7 +60,8 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
     if (!v) issues.push({ sheet: 'Méta', row: null, column: key, message: `Champ « ${key} » manquant` });
     return v;
   };
-  const langue = need('langue');
+  const langueRaw = need('langue');
+  const langue = LANGUES.find((l) => l.toLowerCase() === langueRaw.toLowerCase()) ?? langueRaw;
   const niveau = need('niveau');
   const titre = need('titre');
   const numero = need('numero');
@@ -106,6 +107,14 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
       if (!fr) bad('fr', 'Mot français manquant');
       if (!cible) bad('cible', 'Mot en langue cible manquant');
       if (!fr || !cible) continue;
+
+      if (langue === 'nl-BE' && /^(de|het)\s/i.test(cible)) {
+        bad('cible', `Le mot « ${cible} » commence par un article : mettre l'article dans la colonne « article »`);
+      }
+
+      for (const column of ['synonymes_fr', 'synonymes_cible']) {
+        if (cell(row, column).includes(',')) bad(column, 'Séparateur « , » dans les synonymes : utiliser « ; »');
+      }
 
       const rawArticle = cell(row, 'article').toLowerCase();
       let article: Article | null = null;
