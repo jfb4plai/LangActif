@@ -48,6 +48,8 @@ export interface AnswerEvent {
   ts: number;
   answerText?: string;
   latencyMs?: number;
+  /** Bloc-jeux (liste, chapitre, regroupement ou remédiation) dans lequel la réponse a été donnée. */
+  blocId?: string;
 }
 
 export interface CardState {
