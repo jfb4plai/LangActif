@@ -125,6 +125,14 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
         bad('article', 'Pas d\'article attendu en anglais');
       }
 
+      if (langue === 'nl-BE' && article) {
+        for (const syn of split(cell(row, 'synonymes_cible'))) {
+          if (!/^(de|het)\s+\S/i.test(syn)) {
+            bad('synonymes_cible', `Le synonyme « ${syn} » doit commencer par son article (de ou het)`);
+          }
+        }
+      }
+
       const kFr = fr.toLowerCase();
       const kCible = cible.toLowerCase();
       if (seenFr.has(kFr) || seenCible.has(kCible)) bad('fr', `Doublon dans la liste : « ${fr} » / « ${cible} »`);

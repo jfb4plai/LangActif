@@ -67,31 +67,45 @@ interface Evaluation {
   articleIssue: boolean;
 }
 
-/** Néerlandais vers la langue cible : article et nom sont jugés séparément. */
-function evaluateWithArticle(answer: string, word: Word, article: string, tol: Tolerance): Evaluation {
-  const space = answer.indexOf(' ');
-  const first = space === -1 ? '' : answer.slice(0, space);
-  const rest = space === -1 ? '' : answer.slice(space + 1);
-  const hasArticle = ARTICLES.includes(first.toLowerCase()) && rest !== '';
-  const answerArticle = hasArticle ? first : null;
-  const noun = hasArticle ? rest : answer;
+/** Découpe « de fiets » en article + nom ; null si la forme n'a pas d'article. */
+function splitArticle(text: string): { article: string; noun: string } | null {
+  const space = text.indexOf(' ');
+  if (space === -1) return null;
+  const first = text.slice(0, space);
+  const rest = text.slice(space + 1);
+  return ARTICLES.includes(first.toLowerCase()) && rest !== '' ? { article: first, noun: rest } : null;
+}
 
-  const nounLevel = compare(noun, word.cible, tol);
+/** Néerlandais vers la langue cible : article et nom sont jugés séparément. */
+function evaluateWithArticle(answer: string, expectedNoun: string, expectedArticle: string, tol: Tolerance): Evaluation {
+  const parsed = splitArticle(answer);
+  const answerArticle = parsed ? parsed.article : null;
+  const noun = parsed ? parsed.noun : answer;
+
+  const nounLevel = compare(noun, expectedNoun, tol);
   if (nounLevel === 'faux') return { level: 'faux', articleIssue: false };
-  if (answerArticle === null || answerArticle.toLowerCase() !== article) {
+  if (answerArticle === null || answerArticle.toLowerCase() !== expectedArticle) {
     return { level: 'faux', articleIssue: true };
   }
-  const articleLevel: Level = answerArticle !== article && !tol.casse ? 'presque' : 'juste';
+  const articleLevel: Level = answerArticle !== expectedArticle && !tol.casse ? 'presque' : 'juste';
   return { level: worst(nounLevel, articleLevel), articleIssue: false };
 }
 
 function evaluate(answer: string, word: Word, direction: Direction, tol: Tolerance): Evaluation {
   if (direction === 'fr_to_l' && word.article) {
-    const primary = evaluateWithArticle(answer, word, word.article, tol);
-    const synonyms = word.synonymesCible.map((f) => compare(answer, f, tol));
-    const bestSynonym = best(synonyms);
-    if (RANK[bestSynonym] < RANK[primary.level]) return { level: bestSynonym, articleIssue: false };
-    return primary;
+    // Le mot principal et chaque synonyme (écrit avec son propre article) sont jugés pareil.
+    const candidates: Evaluation[] = [evaluateWithArticle(answer, word.cible, word.article, tol)];
+    for (const form of word.synonymesCible) {
+      const own = splitArticle(form);
+      candidates.push(
+        own
+          ? evaluateWithArticle(answer, own.noun, own.article.toLowerCase(), tol)
+          : { level: compare(answer, form, tol), articleIssue: false },
+      );
+    }
+    const level = best(candidates.map((c) => c.level));
+    if (level !== 'faux') return { level, articleIssue: false };
+    return { level, articleIssue: candidates.some((c) => c.articleIssue) };
   }
   return { level: best(acceptedForms(word, direction).map((f) => compare(answer, f, tol))), articleIssue: false };
 }

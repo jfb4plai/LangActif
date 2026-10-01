@@ -178,7 +178,7 @@ describe('parseChapter, article, séparateurs, langue', () => {
 
   it('accepte « ; » dans les synonymes', () => {
     const r = parseChapter(book({
-      lists: [sheet('L', ['fr', 'cible', 'article', 'synonymes_cible'], [['vélo', 'fiets', 'de', 'rijwiel; velo']])],
+      lists: [sheet('L', ['fr', 'cible', 'article', 'synonymes_cible'], [['vélo', 'fiets', 'de', 'het rijwiel; de velo']])],
     }));
     expect(r.ok).toBe(true);
   });
@@ -191,5 +191,37 @@ describe('parseChapter, article, séparateurs, langue', () => {
       lists: [sheet('L', ['fr', 'cible'], [['chaise', 'chair']])],
     }));
     expect(b.ok && b.chapter.langue).toBe('en-GB');
+  });
+});
+
+describe('parseChapter, article des synonymes néerlandais', () => {
+  const hdr = ['fr', 'cible', 'article', 'synonymes_cible'];
+  it('accepte un synonyme avec son article', () => {
+    const r = parseChapter(book({ lists: [sheet('L', hdr, [['vélo', 'fiets', 'de', 'het rijwiel']])] }));
+    expect(r.ok).toBe(true);
+  });
+  it('signale un synonyme sans article quand le mot a un article', () => {
+    const r = parseChapter(book({ lists: [sheet('L', hdr, [['vélo', 'fiets', 'de', 'het rijwiel; bike']])] }));
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.issues).toEqual([{
+      sheet: 'L', row: 2, column: 'synonymes_cible',
+      message: 'Le synonyme « bike » doit commencer par son article (de ou het)',
+    }]);
+  });
+  it('signale un synonyme réduit à un article seul', () => {
+    const r = parseChapter(book({ lists: [sheet('L', hdr, [['vélo', 'fiets', 'de', 'het']])] }));
+    expect(r.ok).toBe(false);
+  });
+  it('accepte un verbe sans article avec un synonyme nu', () => {
+    const r = parseChapter(book({ lists: [sheet('L', hdr, [['courir', 'lopen', '-', 'rennen']])] }));
+    expect(r.ok).toBe(true);
+  });
+  it('ne concerne pas l anglais', () => {
+    const r = parseChapter(book({
+      meta: { langue: 'en-GB', niveau: 'A1', titre: 'T', numero: '1' },
+      lists: [sheet('L', ['fr', 'cible', 'synonymes_cible'], [['chaise', 'chair', 'seat']])],
+    }));
+    expect(r.ok).toBe(true);
   });
 });

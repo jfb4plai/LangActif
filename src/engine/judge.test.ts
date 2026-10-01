@@ -134,3 +134,34 @@ describe('judge, confusion avant « presque »', () => {
     expect(r.errorType).toBe('confusion_liste');
   });
 });
+
+describe('judge, synonymes néerlandais avec leur propre article', () => {
+  const fietsSyn: Word = { ...fiets, synonymesCible: ['het rijwiel'] };
+  const lopen: Word = { id: 'w9', fr: 'courir', cible: 'lopen', article: null, synonymesFr: [], synonymesCible: ['rennen'] };
+
+  it('juste pour le synonyme avec son article', () => {
+    expect(j(fietsSyn, 'fr_to_l', 'het rijwiel').verdict).toBe('juste');
+  });
+  it('presque pour une faute dans le nom du synonyme', () => {
+    expect(j(fietsSyn, 'fr_to_l', 'het rijwiele').verdict).toBe('presque');
+  });
+  it('faux mauvais_article quand l\'article du synonyme est faux', () => {
+    const r = j(fietsSyn, 'fr_to_l', 'de rijwiel');
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('mauvais_article');
+  });
+  it('faux mauvais_article quand l\'article du synonyme manque', () => {
+    const r = j(fietsSyn, 'fr_to_l', 'rijwiel');
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('mauvais_article');
+  });
+  it('le mot principal reste accepté', () => {
+    expect(j(fietsSyn, 'fr_to_l', 'de fiets').verdict).toBe('juste');
+  });
+  it('presque quand seule la casse diffère (strict)', () => {
+    expect(j(fietsSyn, 'fr_to_l', 'Het Rijwiel').verdict).toBe('presque');
+  });
+  it('un verbe sans article accepte son synonyme nu', () => {
+    expect(j(lopen, 'fr_to_l', 'rennen').verdict).toBe('juste');
+  });
+});
