@@ -2206,6 +2206,7 @@ Si un contrôle échoue : corriger le composant concerné (Layout, Auth, `overri
   - [ ] Sur téléphone (ou fenêtre de 375 px de large), connecté : pas de défilement horizontal, le bouton « Se déconnecter » reste accessible.
   - [ ] « Mot de passe oublié » : le courriel arrive et le lien ramène sur l'application (sinon vérifier l'étape 3 : Redirect URLs).
   - [ ] Facultatif : créer un second compte et vérifier qu'il ne voit pas les chapitres du premier.
+  - [ ] Facultatif, mesure : importer une liste de 300 mots environ et noter la durée. Une relecture a estimé qu'un chapitre au maximum légal (40 listes de 1000 mots) pourrait dépasser le délai de 8 s du rôle `authenticated` ; les chapitres réels sont très en dessous. Si c'est lent, la parade est un import par lots dans la fonction SQL (voir le bilan).
 
 - [ ] **Step 7: Build avant tout push.** `npx tsc --noEmit && npm test && npx vite build` doivent passer sans erreur (règle PLAI : pas de push sans build local réussi).
 
@@ -2271,3 +2272,5 @@ Tasks 0 à 10 exécutées par sous-agents sur la branche `feat/plan-2-applicatio
 - Contrainte `unique (list_id, position)` non différable : elle compliquera le réordonnancement sur place (plan ultérieur).
 - Une liste de 40 x 1000 mots (maximum légal) pourrait approcher le délai d'exécution de 8 s du rôle `authenticated` ; les chapitres réels (quelques dizaines de mots) ne sont pas concernés.
 - Les inscriptions restent ouvertes sur le projet partagé : un compte peut remplir la base dans les limites ci-dessus ; un quota global relève du projet partagé, pas de LangActif.
+
+**Relecture SQL indépendante (fin de journée)** : verdict « sûr à coller tel quel » (aucune erreur de syntaxe, aucun effet sur les autres applications, rejouable). Corrections retenues : les deux occurrences de `UUID_COMPTE_A` sont signalées dans l'en-tête du script, le test (c) vérifie que l'erreur porte bien sur l'article, un contrôle `anon` sur `lang_import_chapter` est ajouté, deux index redondants sont retirés. **Non retenu, noté** : import par lots (une insertion par liste) et déclencheurs de limites par instruction, qui réduiraient le coût d'un import de 40 000 mots ; limites contournables par UPDATE de `chapter_id` ou `list_id` ; article en anglais refusé seulement par la fonction d'import ; course possible sur les compteurs de limites. Aucun n'est un risque de sécurité des données ; à reprendre si de très gros chapitres apparaissent.

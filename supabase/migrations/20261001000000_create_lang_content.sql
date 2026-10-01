@@ -47,9 +47,9 @@ create table if not exists public.lang_words (
   constraint lang_words_syn_cible_card check (cardinality(synonymes_cible) <= 20)
 );
 
+-- Les contraintes unique (chapter_id, position) et (list_id, position) fournissent déjà les index
+-- sur chapter_id et list_id : pas d'index supplémentaire (coût d'écriture inutile à l'import).
 create index if not exists lang_chapters_user_id_idx on public.lang_chapters (user_id);
-create index if not exists lang_lists_chapter_id_idx on public.lang_lists (chapter_id);
-create index if not exists lang_words_list_id_idx on public.lang_words (list_id);
 
 -- Limites d'insertion appliquées par déclencheur : elles tiennent aussi pour les insertions
 -- directes via PostgREST (pas seulement via lang_import_chapter). Security definer : le

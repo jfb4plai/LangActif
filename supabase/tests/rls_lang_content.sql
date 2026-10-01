@@ -1,7 +1,8 @@
 -- Vérification RLS de LangActif. À exécuter dans l'éditeur SQL Supabase, APRÈS la migration.
 -- Tout est annulé à la fin (rollback). Une erreur « ... » signale une règle non respectée.
 --
--- 1) Remplacer UUID_COMPTE_A ci-dessous par l'identifiant d'un compte enseignant existant :
+-- 1) Remplacer les DEUX occurrences de UUID_COMPTE_A (recherche et remplacement dans tout le script)
+--    par l'identifiant d'un compte enseignant existant :
 --      select id, email from auth.users order by created_at desc limit 5;
 -- 2) Exécuter tout le script d'un coup. Succès attendu : « Success. No rows returned ».
 -- (Une requête lancée sans « set local role » contourne RLS : elle ne prouve rien.)
@@ -88,7 +89,12 @@ begin
       '{"langue":"en-GB","niveau":"A1","titre":"Test EN","numero":"98","auteur":null,
         "lists":[{"nom":"L","words":[{"fr":"vélo","cible":"bike","article":"de"}]}]}'::jsonb);
   exception when raise_exception then
-    v_ok := true;
+    -- seule la règle visée compte : toute autre erreur (non authentifié, nombre de listes...) fait échouer le test
+    if sqlerrm like '%article%' then
+      v_ok := true;
+    else
+      raise;
+    end if;
   end;
   assert v_ok, 'article accepté sur un chapitre en-GB';
 end $$;
@@ -102,6 +108,13 @@ begin
     raise exception 'anon peut lire lang_chapters';
   exception when insufficient_privilege then
     null; -- attendu : permission denied
+  end;
+
+  begin
+    perform public.lang_import_chapter('{}'::jsonb);
+    raise exception 'anon peut appeler lang_import_chapter';
+  exception when insufficient_privilege then
+    null; -- attendu : permission denied for function
   end;
 end $$;
 
