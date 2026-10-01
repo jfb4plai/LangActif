@@ -26,12 +26,16 @@ export interface PickOptions {
 export function pickSessionCards(o: PickOptions): CardRef[] {
   const due: Array<{ ref: CardRef; dueAt: number; box: number }> = [];
   const fresh: CardRef[] = [];
+  const seen = new Set<string>();
   for (const ref of o.cards) {
-    const state = o.states.get(cardKey(ref.wordId, ref.direction));
+    const k = cardKey(ref.wordId, ref.direction);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const state = o.states.get(k);
     if (!state) fresh.push(ref);
     else if (state.dueAt <= o.now) due.push({ ref, dueAt: state.dueAt, box: state.box });
   }
   due.sort((a, b) => a.box - b.box || a.dueAt - b.dueAt);
-  const picked = [...due.map((d) => d.ref), ...fresh.slice(0, o.maxNew)];
-  return o.maxTotal === undefined ? picked : picked.slice(0, o.maxTotal);
+  const picked = [...due.map((d) => d.ref), ...fresh.slice(0, Math.max(0, o.maxNew))];
+  return o.maxTotal === undefined ? picked : picked.slice(0, Math.max(0, o.maxTotal));
 }

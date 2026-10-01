@@ -66,4 +66,18 @@ describe('pickSessionCards', () => {
     const states = new Map<string, CardState>([['w1:fr_to_l', st('w1', 5, NOW + 10 * DAY_MS)]]);
     expect(pickSessionCards({ cards: [ref('w1')], states, now: NOW, maxNew: 5 })).toEqual([]);
   });
+  it('ne renvoie pas deux fois une carte présente deux fois', () => {
+    const out = pickSessionCards({ cards: [ref('a'), ref('b'), ref('a')], states: new Map(), now: NOW, maxNew: 10 });
+    expect(out).toEqual([ref('a'), ref('b')]);
+  });
+
+  it('traite un maxNew négatif comme 0', () => {
+    const out = pickSessionCards({ cards: [ref('a'), ref('b'), ref('c'), ref('d'), ref('e')], states: new Map(), now: NOW, maxNew: -2 });
+    expect(out).toEqual([]);
+  });
+
+  it('traite un maxTotal négatif comme 0', () => {
+    const out = pickSessionCards({ cards: [ref('a'), ref('b')], states: new Map(), now: NOW, maxNew: 5, maxTotal: -1 });
+    expect(out).toEqual([]);
+  });
 });
