@@ -9,7 +9,11 @@ create table if not exists public.lang_chapters (
   titre text not null,
   numero text not null,
   auteur text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint lang_chapters_niveau_len check (char_length(niveau) between 1 and 20),
+  constraint lang_chapters_titre_len check (char_length(titre) between 1 and 200),
+  constraint lang_chapters_numero_len check (char_length(numero) between 1 and 20),
+  constraint lang_chapters_auteur_len check (auteur is null or char_length(auteur) <= 100)
 );
 
 create table if not exists public.lang_lists (
@@ -17,7 +21,8 @@ create table if not exists public.lang_lists (
   chapter_id uuid not null references public.lang_chapters(id) on delete cascade,
   nom text not null,
   position integer not null check (position >= 0),
-  unique (chapter_id, position)
+  unique (chapter_id, position),
+  constraint lang_lists_nom_len check (char_length(nom) between 1 and 100)
 );
 
 create table if not exists public.lang_words (
@@ -32,12 +37,58 @@ create table if not exists public.lang_words (
   phrase_cible text,
   phrase_fr text,
   audio_url text,
-  unique (list_id, position)
+  unique (list_id, position),
+  constraint lang_words_fr_len check (char_length(fr) between 1 and 200),
+  constraint lang_words_cible_len check (char_length(cible) between 1 and 200),
+  constraint lang_words_phrase_cible_len check (phrase_cible is null or char_length(phrase_cible) <= 500),
+  constraint lang_words_phrase_fr_len check (phrase_fr is null or char_length(phrase_fr) <= 500),
+  constraint lang_words_audio_url_fmt check (audio_url is null or (char_length(audio_url) <= 500 and audio_url ~ '^https://')),
+  constraint lang_words_syn_fr_card check (cardinality(synonymes_fr) <= 20),
+  constraint lang_words_syn_cible_card check (cardinality(synonymes_cible) <= 20)
 );
 
 create index if not exists lang_chapters_user_id_idx on public.lang_chapters (user_id);
 create index if not exists lang_lists_chapter_id_idx on public.lang_lists (chapter_id);
 create index if not exists lang_words_list_id_idx on public.lang_words (list_id);
+
+-- Limites d'insertion appliquées par déclencheur : elles tiennent aussi pour les insertions
+-- directes via PostgREST (pas seulement via lang_import_chapter). Security invoker : le
+-- comptage se fait sous RLS, donc sur les lignes de l'appelant.
+create or replace function public.lang_enforce_limits()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if tg_table_name = 'lang_chapters' then
+    if (select count(*) from public.lang_chapters where user_id = new.user_id) >= 200 then
+      raise exception 'Limite de 200 chapitres atteinte';
+    end if;
+  elsif tg_table_name = 'lang_lists' then
+    if (select count(*) from public.lang_lists where chapter_id = new.chapter_id) >= 40 then
+      raise exception 'Limite de 40 listes par chapitre atteinte';
+    end if;
+  elsif tg_table_name = 'lang_words' then
+    if (select count(*) from public.lang_words where list_id = new.list_id) >= 1000 then
+      raise exception 'Limite de 1000 mots par liste atteinte';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists lang_chapters_limits on public.lang_chapters;
+create trigger lang_chapters_limits before insert on public.lang_chapters
+  for each row execute function public.lang_enforce_limits();
+
+drop trigger if exists lang_lists_limits on public.lang_lists;
+create trigger lang_lists_limits before insert on public.lang_lists
+  for each row execute function public.lang_enforce_limits();
+
+drop trigger if exists lang_words_limits on public.lang_words;
+create trigger lang_words_limits before insert on public.lang_words
+  for each row execute function public.lang_enforce_limits();
 
 -- Fonctions de propriété en security definer : pas d'auto-référence de politique RLS
 -- (incident AménagActif du 2026-09-23).
@@ -71,6 +122,8 @@ $$;
 
 revoke all on function public.lang_owns_chapter(uuid) from public;
 revoke all on function public.lang_owns_list(uuid) from public;
+revoke execute on function public.lang_owns_chapter(uuid) from anon;
+revoke execute on function public.lang_owns_list(uuid) from anon;
 grant execute on function public.lang_owns_chapter(uuid) to authenticated;
 grant execute on function public.lang_owns_list(uuid) to authenticated;
 
@@ -78,16 +131,19 @@ alter table public.lang_chapters enable row level security;
 alter table public.lang_lists enable row level security;
 alter table public.lang_words enable row level security;
 
+drop policy if exists lang_chapters_owner_all on public.lang_chapters;
 create policy lang_chapters_owner_all on public.lang_chapters
   for all to authenticated
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists lang_lists_owner_all on public.lang_lists;
 create policy lang_lists_owner_all on public.lang_lists
   for all to authenticated
   using (public.lang_owns_chapter(chapter_id))
   with check (public.lang_owns_chapter(chapter_id));
 
+drop policy if exists lang_words_owner_all on public.lang_words;
 create policy lang_words_owner_all on public.lang_words
   for all to authenticated
   using (public.lang_owns_list(list_id))
@@ -95,6 +151,9 @@ create policy lang_words_owner_all on public.lang_words
 
 -- Grants Data API (obligatoires pour toute nouvelle table). Pas d'accès anonyme :
 -- les élèves passeront par des fonctions serveur (plan 3).
+-- Les privilèges par défaut du projet partagé donnent des droits à anon et authenticated :
+-- on les retire d'abord, puis on accorde le strict nécessaire.
+revoke all on public.lang_chapters, public.lang_lists, public.lang_words from anon, authenticated;
 grant select, insert, update, delete on public.lang_chapters to authenticated;
 grant select, insert, update, delete on public.lang_lists to authenticated;
 grant select, insert, update, delete on public.lang_words to authenticated;
@@ -138,12 +197,15 @@ begin
 
     wi := 0;
     for w in select value from jsonb_array_elements(l->'words') loop
+      if p->>'langue' = 'en-GB' and nullif(w->>'article', '') is not null then
+        raise exception 'Pas d''article en anglais';
+      end if;
       insert into public.lang_words
         (list_id, position, fr, cible, article, synonymes_fr, synonymes_cible, phrase_cible, phrase_fr, audio_url)
       values (
         v_list, wi, w->>'fr', w->>'cible', nullif(w->>'article', ''),
-        array(select jsonb_array_elements_text(coalesce(w->'synonymes_fr', '[]'::jsonb))),
-        array(select jsonb_array_elements_text(coalesce(w->'synonymes_cible', '[]'::jsonb))),
+        case when jsonb_typeof(w->'synonymes_fr') = 'array' then array(select jsonb_array_elements_text(w->'synonymes_fr')) else '{}'::text[] end,
+        case when jsonb_typeof(w->'synonymes_cible') = 'array' then array(select jsonb_array_elements_text(w->'synonymes_cible')) else '{}'::text[] end,
         nullif(w->>'phrase_cible', ''), nullif(w->>'phrase_fr', ''), nullif(w->>'audio_url', '')
       );
       wi := wi + 1;

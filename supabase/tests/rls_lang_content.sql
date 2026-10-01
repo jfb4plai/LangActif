@@ -53,6 +53,46 @@ begin
   assert n = 0, 'B a supprimé le chapitre de A';
 end $$;
 
+-- Bornes de longueur, format d'URL audio et article interdit en anglais (compte A).
+select set_config('request.jwt.claims', '{"sub":"UUID_COMPTE_A","role":"authenticated"}', true);
+
+do $$
+declare
+  v_list uuid;
+  v_ok boolean := false;
+begin
+  select id into v_list from public.lang_lists
+  where chapter_id = current_setting('lang.test_chapter')::uuid limit 1;
+
+  -- (a) audio_url non https refusée
+  begin
+    insert into public.lang_words (list_id, position, fr, cible, audio_url)
+    values (v_list, 50, 'a', 'b', 'http://exemple.be/a.mp3');
+    raise exception 'audio_url http acceptée';
+  exception when check_violation then
+    null;
+  end;
+
+  -- (b) fr de 201 caractères refusé
+  begin
+    insert into public.lang_words (list_id, position, fr, cible)
+    values (v_list, 51, repeat('x', 201), 'b');
+    raise exception 'fr de 201 caractères accepté';
+  exception when check_violation then
+    null;
+  end;
+
+  -- (c) article sur un chapitre anglais refusé par l'import
+  begin
+    perform public.lang_import_chapter(
+      '{"langue":"en-GB","niveau":"A1","titre":"Test EN","numero":"98","auteur":null,
+        "lists":[{"nom":"L","words":[{"fr":"vélo","cible":"bike","article":"de"}]}]}'::jsonb);
+  exception when raise_exception then
+    v_ok := true;
+  end;
+  assert v_ok, 'article accepté sur un chapitre en-GB';
+end $$;
+
 -- Anonyme : aucun accès aux tables.
 set local role anon;
 do $$
