@@ -1420,12 +1420,12 @@ describe('createSeededRng', () => {
 
 describe('buildWheel', () => {
   it('contient exactement les lettres du mot sans leurres', () => {
-    const w = buildWheel('fiets', 0, 'nl', createSeededRng(1));
+    const w = buildWheel('fiets', 0, 'nl-BE', createSeededRng(1));
     expect(sorted(w)).toBe(sorted(['F', 'I', 'E', 'T', 'S']));
   });
 
   it('ajoute des leurres absents du mot', () => {
-    const w = buildWheel('fiets', 2, 'nl', createSeededRng(1));
+    const w = buildWheel('fiets', 2, 'nl-BE', createSeededRng(1));
     expect(w).toHaveLength(7);
     const letters = new Set('FIETS'.split(''));
     expect(w.filter((l) => !letters.has(l))).toHaveLength(2);
