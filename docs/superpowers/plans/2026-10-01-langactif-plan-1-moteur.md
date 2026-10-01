@@ -2109,3 +2109,30 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 **Cohérence des types** : `Word`, `AnswerEvent`, `CardState`, `CardRef`, `Mode`, `Verdict`, `ErrorType`, `Box` sont définis en Task 1 et réutilisés tels quels. `cardKey(wordId, direction)` produit `"w1:fr_to_l"`, forme attendue dans les tests des Tasks 5 à 8. `ParsedWord` omet `id` (décision 8).
 
 **Placeholders** : aucun.
+
+---
+
+## Bilan d'exécution (2026-10-01)
+
+Exécuté par sous-agents sur la branche `feat/plan-1-moteur`, tâche par tâche, puis revue finale globale par un relecteur indépendant. Résultat : 11 fichiers de tests, 122 tests, `tsc --noEmit` propre.
+
+**Écarts entre le plan ci-dessus et le code livré**
+
+1. Tâche 9 : les tests de la roue utilisaient `'nl'` au lieu de `'nl-BE'` (défaut du plan, corrigé dans le plan).
+2. Revue finale, corrections livrées (le code fait foi, plus que les extraits de ce plan) :
+   - `judge.ts` : article et nom jugés séparément (un mauvais article n'est jamais « presque »), un autre mot de la liste tapé exactement est une `confusion_liste` avant « presque ».
+   - `readXlsx.ts` : limites (2 Mo, 40 feuilles, 1000 lignes, 20 colonnes), texte de cellule récursif, feuilles masquées ignorées, clés et noms de feuille normalisés (accents, casse).
+   - `chapter.ts` : `cible` commençant par un article refusée en néerlandais, virgule dans les synonymes refusée, langue insensible à la casse.
+   - `remediation.ts` : indépendante de l'ordre, sans doublons, `topError` départagé de façon déterministe.
+   - `session.ts` : cartes dédoublonnées, bornes de `maxNew` et `maxTotal`.
+   - `wheel.ts` : insensible à la forme Unicode.
+   - Points d'entrée séparés : `src/engine/index.ts` (pur) et `src/importer/index.ts` (exceljs). `src/index.ts` supprimé. Champ `blocId` ajouté au journal.
+
+**Décisions encore ouvertes (à trancher avant le plan 2 ou 3)**
+
+- **I2, synonymes en néerlandais et article** : un synonyme n'est pas préfixé de l'article ; « rijwiel » sans article est jugé `juste`, « het rijwiel » est jugé `faux`. À décider : le synonyme porte son article dans la cellule, ou format dédié.
+- **I7, nouvelle frappe après « presque »** : si l'application journalise la nouvelle frappe comme une réponse `juste` normale, la carte monte, ce que le spec interdit. À décider au plan 3 : la nouvelle frappe n'est pas un événement Leitner, ou elle porte un marqueur ignoré.
+- **I10, homonymes** : « banc » et « banque » vers « bank » bloquent l'import comme doublon. À décider : ne bloquer que si le couple fr + cible est identique.
+- **Aide dans le modèle Excel** : une ligne d'aide en ligne 2 serait importée comme un mot. À décider au plan 2 (commentaire de cellule ou ligne marquée).
+- **Vulnérabilités `npm audit`** : toutes en dépendances de développement (vitest, vite, esbuild) ou non atteignables (uuid via exceljs). Ne pas lancer `npm audit fix --force` (il rétrograde exceljs). Monter vitest à la version 4.1.11 ou plus à un moment calme.
+- **Lecture d'un fichier déposé par un utilisateur** : les limites ne couvrent pas une bombe zip (décompression en mémoire). Lire dans un Web Worker ou côté serveur avec un délai maximal (plan 2).
