@@ -1,0 +1,19 @@
+{
+  "name": "langactif",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "LangActif : vocabulaire de langues étrangères, moteur pur",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3",
+    "vitest": "^2.1.4"
+  }
+}
