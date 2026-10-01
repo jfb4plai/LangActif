@@ -1,0 +1,16 @@
+/** Traduit les messages techniques courants en français ; les autres passent tels quels. */
+const RULES: Array<{ match: string[]; text: string }> = [
+  { match: ['cannot coerce the result to a single json object'], text: 'Ce chapitre est introuvable (il a peut-être été supprimé).' },
+  { match: ['failed to fetch', 'networkerror', 'load failed'], text: 'Connexion impossible : vérifiez votre réseau puis réessayez.' },
+  { match: ['rate limit'], text: 'Trop de tentatives : patientez quelques minutes avant de réessayer.' },
+  { match: ['user already registered'], text: 'Un compte existe déjà avec cette adresse : connectez-vous.' },
+];
+
+export function friendlyError(message: string): string {
+  const lower = message.toLowerCase();
+  // messages de nos fonctions SQL : déjà en français, conservés tels quels
+  if (message.includes('Limite de') || message.includes('Nombre de listes invalide') || message.includes("Pas d'article en anglais")) {
+    return message;
+  }
+  return RULES.find((r) => r.match.some((m) => lower.includes(m)))?.text ?? message;
+}

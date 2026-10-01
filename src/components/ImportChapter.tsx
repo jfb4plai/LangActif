@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Langue } from '../engine/types';
 import { parseChapter, type ImportIssue, type ParsedChapter } from '../importer/chapter';
@@ -26,17 +26,25 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const requestId = useRef(0);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
   const downloadTemplate = async () => {
-    // chargement différé : exceljs n'est téléchargé que si l'enseignant demande le modèle
-    const { buildTemplate } = await import('../importer/template');
-    const buffer = await buildTemplate(templateLangue);
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `modele-langactif-${templateLangue}.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
+    setTemplateError(null);
+    try {
+      // chargement différé : exceljs n'est téléchargé que si l'enseignant demande le modèle
+      const { buildTemplate } = await import('../importer/template');
+      const buffer = await buildTemplate(templateLangue);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `modele-langactif-${templateLangue}.xlsx`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setTemplateError('Impossible de préparer le modèle, réessayez.');
+    }
   };
 
   const onFile = async (file: File | undefined) => {
@@ -44,17 +52,22 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
     setIssues([]);
     setReadError(null);
     setSaveError(null);
-    if (!file) return;
+    const current = ++requestId.current;
+    if (!file) {
+      setReading(false);
+      return;
+    }
     setReading(true);
     try {
       const result = parseChapter(await readXlsxInWorker(file));
+      if (current !== requestId.current) return;
       if (result.ok) setParsed({ chapter: result.chapter, warnings: result.warnings });
       else setIssues(result.issues);
     } catch (e) {
+      if (current !== requestId.current) return;
       setReadError(e instanceof Error ? e.message : 'Lecture impossible.');
-    } finally {
-      setReading(false);
     }
+    if (current === requestId.current) setReading(false);
   };
 
   const save = async () => {
@@ -89,6 +102,7 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
           </select>
         </FormField>
         <button type="button" className="plai-btn-ghost" onClick={downloadTemplate}>Télécharger le modèle Excel</button>
+        {templateError && <div className="plai-error" role="alert">{templateError}</div>}
       </div>
 
       <div className="plai-card">

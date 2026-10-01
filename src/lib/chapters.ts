@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Article, Langue } from '../engine/types';
+import { friendlyError } from './errors';
 import type { ImportPayload } from './importPayload';
 
 export interface ChapterSummary {
@@ -53,7 +54,7 @@ export async function listChapters(client: SupabaseClient): Promise<ChapterSumma
     .from('lang_chapters')
     .select('id, langue, niveau, titre, numero, created_at, lang_lists(count)')
     .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyError(error.message));
   return ((data ?? []) as unknown as SummaryRow[]).map(({ lang_lists, ...rest }) => ({
     ...rest,
     listsCount: lang_lists[0]?.count ?? 0,
@@ -79,7 +80,7 @@ export async function getChapter(client: SupabaseClient, id: string): Promise<Ch
     )
     .eq('id', id)
     .single();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyError(error.message));
   const { lang_lists, ...rest } = data as unknown as DetailRow;
   return sortChapterDetail({
     ...rest,
@@ -90,11 +91,11 @@ export async function getChapter(client: SupabaseClient, id: string): Promise<Ch
 /** Import atomique : la fonction SQL crée chapitre, listes et mots en une transaction. */
 export async function importChapter(client: SupabaseClient, payload: ImportPayload): Promise<string> {
   const { data, error } = await client.rpc('lang_import_chapter', { p: payload });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyError(error.message));
   return data as string;
 }
 
 export async function deleteChapter(client: SupabaseClient, id: string): Promise<void> {
   const { error } = await client.from('lang_chapters').delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyError(error.message));
 }

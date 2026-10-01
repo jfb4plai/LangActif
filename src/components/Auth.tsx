@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { friendlyError } from '../lib/errors';
 import { supabase } from '../lib/supabase';
 import { FormField } from './FormField';
 
@@ -29,20 +30,25 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
     setError(null);
     setInfo(null);
     setLoading(true);
-    if (mode === 'signin') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError('Connexion impossible : vérifiez l\'adresse et le mot de passe.');
-    } else if (mode === 'reset') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-      if (error) setError(error.message);
-      else setInfo('Courriel envoyé. Ouvrez le lien reçu pour choisir un nouveau mot de passe.');
-    } else {
-      // emailRedirectTo : sans lui, le courriel de confirmation ne sait pas revenir vers cette application
-      const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
-      if (error) setError(error.message);
-      else setInfo('Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis connectez-vous.');
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) setError('Connexion impossible : vérifiez l\'adresse et le mot de passe.');
+      } else if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+        if (error) setError(friendlyError(error.message));
+        else setInfo('Courriel envoyé. Ouvrez le lien reçu pour choisir un nouveau mot de passe.');
+      } else {
+        // emailRedirectTo : sans lui, le courriel de confirmation ne sait pas revenir vers cette application
+        const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+        if (error) setError(friendlyError(error.message));
+        else setInfo('Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis connectez-vous.');
+      }
+    } catch {
+      setError('Une erreur est survenue, réessayez.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleUpdatePassword = async (e: FormEvent) => {
@@ -53,10 +59,15 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setLoading(false);
-    if (error) setError(error.message);
-    else onPasswordUpdated?.();
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) setError(friendlyError(error.message));
+      else onPasswordUpdated?.();
+    } catch {
+      setError('Une erreur est survenue, réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (passwordRecovery) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Auth } from './components/Auth';
 import { ChapterDetail } from './components/ChapterDetail';
 import { ChapterList } from './components/ChapterList';
@@ -12,6 +12,11 @@ type View = { name: 'chapters' } | { name: 'import' } | { name: 'chapter'; id: s
 export default function App() {
   const { session, loading, passwordRecovery, clearPasswordRecovery } = useSession();
   const [view, setView] = useState<View>({ name: 'chapters' });
+
+  // changement de compte ou déconnexion : retour à l'écran d'accueil
+  useEffect(() => {
+    setView({ name: 'chapters' });
+  }, [session?.user.id]);
 
   if (loading) {
     return (
