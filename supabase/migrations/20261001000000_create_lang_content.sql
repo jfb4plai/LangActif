@@ -120,7 +120,7 @@ begin
   if auth.uid() is null then
     raise exception 'Non authentifié';
   end if;
-  if jsonb_array_length(p->'lists') = 0 or jsonb_array_length(p->'lists') > 40 then
+  if coalesce(jsonb_array_length(p->'lists'), 0) not between 1 and 40 then
     raise exception 'Nombre de listes invalide (1 à 40)';
   end if;
 
@@ -129,7 +129,7 @@ begin
   returning id into v_chapter;
 
   for l in select value from jsonb_array_elements(p->'lists') loop
-    if jsonb_array_length(l->'words') > 1000 then
+    if coalesce(jsonb_array_length(l->'words'), 0) > 1000 then
       raise exception 'Trop de mots dans la liste « % » (maximum 1000)', l->>'nom';
     end if;
     insert into public.lang_lists (chapter_id, nom, position)
