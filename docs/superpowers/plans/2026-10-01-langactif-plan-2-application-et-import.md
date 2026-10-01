@@ -661,6 +661,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 1. Copier le contenu de la migration dans l'éditeur SQL du projet Supabase partagé et l'exécuter.
 2. Remplacer `UUID_COMPTE_A` dans le script de vérification, l'exécuter.
 Expected: `Success. No rows returned` aux deux exécutions. Toute autre sortie : arrêter, ne pas passer à la recette, corriger la migration.
+Le script rejouable : la migration peut être exécutée deux fois sans erreur (politiques et déclencheurs sont recréés). Le dernier bloc du script de vérification suppose que `anon` n'a aucun droit sur les tables `lang_*`, ce que la migration garantit en révoquant d'abord les privilèges par défaut du projet partagé.
 
 ---
 
@@ -2199,7 +2200,12 @@ Si un contrôle échoue : corriger le composant concerné (Layout, Auth, `overri
   - [ ] Importer un fichier de plus de 2 Mo : message « trop volumineux ».
   - [ ] Revenir à la liste : le chapitre y figure avec « 2 listes ».
   - [ ] Supprimer le chapitre : confirmation, puis retour à une liste vide.
-  - [ ] Se déconnecter puis se reconnecter.
+  - [ ] Se déconnecter puis se reconnecter : on retombe sur la liste des chapitres (pas sur le chapitre ouvert avant).
+  - [ ] Choisir à nouveau le MÊME fichier après l'avoir corrigé : l'application relit bien le fichier (les anciennes erreurs disparaissent).
+  - [ ] Renommer un fichier `.docx` en `.xlsx` et l'importer : message « Ce fichier n'est pas un classeur Excel (.xlsx) lisible ».
+  - [ ] Sur téléphone (ou fenêtre de 375 px de large), connecté : pas de défilement horizontal, le bouton « Se déconnecter » reste accessible.
+  - [ ] « Mot de passe oublié » : le courriel arrive et le lien ramène sur l'application (sinon vérifier l'étape 3 : Redirect URLs).
+  - [ ] Facultatif : créer un second compte et vérifier qu'il ne voit pas les chapitres du premier.
 
 - [ ] **Step 7: Build avant tout push.** `npx tsc --noEmit && npm test && npx vite build` doivent passer sans erreur (règle PLAI : pas de push sans build local réussi).
 
@@ -2230,3 +2236,38 @@ Si un contrôle échoue : corriger le composant concerné (Layout, Auth, `overri
 - Le bundle exceljs dans le Worker avec Vite n'a pas été essayé dans ce dépôt : si `vite build` échoue sur exceljs (polyfills Node), le repli est de lire le classeur côté serveur dans une fonction avec délai maximal (changement de conception à soumettre à JF avant de continuer).
 - Les notes de cellule (`cell.note`) et le gel de volet d'`exceljs` sont vérifiés indirectement (le classeur se relit) ; leur affichage dans Excel est vérifié à la recette.
 - La jointure imbriquée `lang_lists(... lang_words(...))` de PostgREST dépend des clés étrangères créées par la migration : si elle échoue, vérifier d'abord que la migration est bien appliquée (A1).
+
+
+---
+
+## Bilan d'exécution (2026-10-01)
+
+Tasks 0 à 10 exécutées par sous-agents sur la branche `feat/plan-2-application`, puis revue finale globale par un relecteur indépendant ; correctifs livrés en trois lots. État : 171 tests, `tsc --noEmit` propre, `vite build` réussi (exceljs uniquement dans le Worker et le chunk du modèle, pas dans le bundle principal). **Reste : Task 11 (recette par JF) et la fusion sur `main`.**
+
+**Écarts entre les extraits de ce plan et le code livré** (le code fait foi) :
+
+1. Task 4 : `chapters.test.ts` compte 7 tests (le plan en annonçait 6).
+2. Task 2, migration SQL, corrigée après revue :
+   - Révocation des privilèges par défaut de Supabase pour `anon` et `authenticated` avant les grants (sans cela le dernier bloc du test RLS échouait, et `authenticated` gardait TRUNCATE, REFERENCES et TRIGGER).
+   - Bornes de longueur en CHECK sur toutes les colonnes de texte, `audio_url` limité à `https://` (500 caractères), 20 synonymes par mot au plus.
+   - Limites par déclencheur, valables aussi pour les insertions directes : 200 chapitres par enseignant, 40 listes par chapitre, 1000 mots par liste (fonction `security definer` : comptage par index, sans réévaluer la RLS ligne par ligne).
+   - Politiques et déclencheurs rejouables (`drop ... if exists`), synonymes null acceptés, article refusé sur un chapitre anglais.
+   - Script RLS : trois contrôles ajoutés (audio non https, texte trop long, article en anglais).
+3. Interface, corrigée après revue :
+   - Même fichier ré-importable après correction ; résultat d'un fichier périmé ignoré si deux fichiers sont choisis vite.
+   - Barre de navigation sans débordement à 375 px une fois connecté (le courriel est masqué sur téléphone).
+   - 16 px partout (libellés, messages, pied de page, étiquettes), boutons et liens d'au moins 44 px de haut, contraste du pied de page et de l'état vide relevé.
+   - Écran réinitialisé à la déconnexion, focus placé sur le titre à chaque écran, messages d'erreur techniques traduits en français (`friendlyError`), états de chargement qui ne restent plus bloqués, balisage valide des cartes, phrase française visible dans le détail.
+
+**Décisions prises à valider par JF (nouvelles)** :
+
+- Plafonds de 200 chapitres par enseignant, 200 caractères par mot et titre, 500 par phrase et par adresse audio : choisis pour protéger la base partagée, modifiables dans la migration avant son application.
+- L'adresse audio fournie dans l'Excel doit commencer par `https://` (les appareils des élèves ne chargeront pas d'adresse arbitraire en clair).
+
+**Non traité, noté pour la suite** :
+
+- Date du chapitre (champ `date` de la feuille Méta du spec 4.2) : absent du modèle et de la table.
+- Navigation par état (le bouton « précédent » du navigateur quitte l'application, un rechargement revient à la liste) : acceptable ici, le plan 3 (PWA élève) exigera un vrai routage.
+- Contrainte `unique (list_id, position)` non différable : elle compliquera le réordonnancement sur place (plan ultérieur).
+- Une liste de 40 x 1000 mots (maximum légal) pourrait approcher le délai d'exécution de 8 s du rôle `authenticated` ; les chapitres réels (quelques dizaines de mots) ne sont pas concernés.
+- Les inscriptions restent ouvertes sur le projet partagé : un compte peut remplir la base dans les limites ci-dessus ; un quota global relève du projet partagé, pas de LangActif.
