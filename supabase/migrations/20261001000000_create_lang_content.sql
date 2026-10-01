@@ -52,12 +52,15 @@ create index if not exists lang_lists_chapter_id_idx on public.lang_lists (chapt
 create index if not exists lang_words_list_id_idx on public.lang_words (list_id);
 
 -- Limites d'insertion appliquées par déclencheur : elles tiennent aussi pour les insertions
--- directes via PostgREST (pas seulement via lang_import_chapter). Security invoker : le
--- comptage se fait sous RLS, donc sur les lignes de l'appelant.
+-- directes via PostgREST (pas seulement via lang_import_chapter). Security definer : le
+-- comptage passe par les index sans réévaluer la politique RLS ligne par ligne (un import de
+-- 1000 mots ferait sinon des centaines de milliers d'appels de la fonction de propriété).
+-- Les clés comptées (user_id, chapter_id, list_id) viennent de la ligne insérée, déjà
+-- contrôlée par les politiques RLS : le comptage ne divulgue rien.
 create or replace function public.lang_enforce_limits()
 returns trigger
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 begin
