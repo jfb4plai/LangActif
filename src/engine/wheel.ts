@@ -30,7 +30,7 @@ function shuffle<T>(items: T[], rng: () => number): T[] {
 
 /** Lettres mélangées de la roue : celles du mot, plus `leurres` lettres absentes du mot. */
 export function buildWheel(word: string, leurres: number, langue: Langue | 'fr', rng: () => number = Math.random): string[] {
-  const letters = word.toUpperCase().split('');
+  const letters = word.normalize('NFC').toUpperCase().split('');
   if (leurres > 0) {
     const inWord = new Set(letters);
     const available = POOLS[langue].filter((l) => !inWord.has(l));
@@ -49,7 +49,7 @@ export const WHEEL_MAX_LETTERS = 10;
 
 /** Seuls les mots simples d'au plus 10 lettres vont dans la roue. */
 export function isWheelEligible(word: string): WheelEligibility {
-  const w = word.trim();
+  const w = word.normalize('NFC').trim();
   if (w === '') return { ok: false, reason: 'vide' };
   if (/[\s-]/.test(w)) return { ok: false, reason: 'expression' };
   if (!/^\p{L}+$/u.test(w)) return { ok: false, reason: 'caracteres' };
@@ -59,8 +59,8 @@ export function isWheelEligible(word: string): WheelEligibility {
 
 /** Retour qualifié : nombre de lettres à la bonne place, sans dire lesquelles. */
 export function countWellPlaced(attempt: string, target: string): number {
-  const a = attempt.toUpperCase();
-  const t = target.toUpperCase();
+  const a = attempt.normalize('NFC').toUpperCase();
+  const t = target.normalize('NFC').toUpperCase();
   let count = 0;
   for (let i = 0; i < Math.min(a.length, t.length); i++) if (a[i] === t[i]) count++;
   return count;

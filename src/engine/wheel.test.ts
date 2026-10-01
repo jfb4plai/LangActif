@@ -65,3 +65,19 @@ describe('countWellPlaced', () => {
     expect(countWellPlaced('ch', 'chair')).toBe(2);
   });
 });
+
+describe('forme Unicode NFD', () => {
+  it('isWheelEligible accepte un mot décomposé', () => {
+    expect(isWheelEligible('café')).toEqual({ ok: true });
+  });
+
+  it('buildWheel compose les lettres accentuées', () => {
+    const letters = buildWheel('café', 0, 'fr', createSeededRng(1));
+    expect(letters).toHaveLength(4);
+    expect(letters).toContain('É');
+  });
+
+  it('countWellPlaced compare en forme composée', () => {
+    expect(countWellPlaced('café', 'café')).toBe(4);
+  });
+});
