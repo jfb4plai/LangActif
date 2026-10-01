@@ -5,3 +5,6 @@ dist
 !.env.example
 .superpowers/
 .claude/
+
+# copies locales contenant des identifiants de compte
+*.local.sql
