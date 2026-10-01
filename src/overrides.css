@@ -42,3 +42,13 @@ table.lang-table th {
 .plai-input {
   font-size: 16px;
 }
+
+/* Téléphone : la barre de navigation ne doit pas déborder */
+@media (max-width: 520px) {
+  .plai-nav {
+    padding: 0 1rem;
+  }
+  .lang-nav-email {
+    display: none;
+  }
+}

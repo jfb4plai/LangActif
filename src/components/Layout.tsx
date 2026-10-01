@@ -18,7 +18,7 @@ export function Layout({ children, userEmail, onSignOut, onHome }: LayoutProps) 
         </button>
         {userEmail && (
           <div className="plai-nav-actions">
-            <span style={{ fontSize: 16, color: 'var(--text2)' }}>{userEmail}</span>
+            <span className="lang-nav-email" style={{ fontSize: 16, color: 'var(--text2)' }}>{userEmail}</span>
             <button type="button" className="plai-nav-link" style={{ fontSize: 16 }} onClick={onSignOut}>
               Se déconnecter
             </button>

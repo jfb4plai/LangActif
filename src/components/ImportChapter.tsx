@@ -111,7 +111,11 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
           label="Classeur Excel (.xlsx)"
           help="2 Mo maximum. Le fichier est vérifié dans votre navigateur ; rien n'est enregistré avant votre confirmation à l'étape suivante."
         >
-          <input className="plai-input" type="file" accept=".xlsx" onChange={(e) => onFile(e.target.files?.[0])} />
+          <input className="plai-input" type="file" accept=".xlsx" onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              onFile(f);
+            }} />
         </FormField>
         {reading && <p aria-live="polite">Lecture du fichier...</p>}
         {readError && <div className="plai-error" role="alert">{readError}</div>}
