@@ -118,12 +118,13 @@ describe('parseChapter, erreurs', () => {
     expect(issues.map((i) => [i.row, i.column])).toEqual([[2, 'fr'], [3, 'cible']]);
   });
 
-  it('signale les doublons dans une liste', () => {
+  it('bloque un couple identique (casse ignorée) dans une liste', () => {
     const issues = issuesOf(book({
-      lists: [sheet('L', ['fr', 'cible', 'article'], [['vélo', 'fiets', 'de'], ['Vélo', 'rijwiel', 'het']])],
+      lists: [sheet('L', ['fr', 'cible', 'article'], [['vélo', 'fiets', 'de'], ['Vélo', 'Fiets', 'de']])],
     }));
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toContain('Doublon');
+    expect(issues[0].message).toBe('Doublon dans la liste : « Vélo » / « Fiets »');
+    expect(issues[0].column).toBe('fr');
     expect(issues[0].row).toBe(3);
   });
 
@@ -223,5 +224,36 @@ describe('parseChapter, article des synonymes néerlandais', () => {
       lists: [sheet('L', ['fr', 'cible', 'synonymes_cible'], [['chaise', 'chair', 'seat']])],
     }));
     expect(r.ok).toBe(true);
+  });
+});
+
+describe('parseChapter, homonymes et avertissements', () => {
+  it('un fr répété avec une autre cible donne un avertissement, pas une erreur', () => {
+    const r = parseChapter(book({
+      lists: [sheet('Liste 4.1', ['fr', 'cible', 'article', 'synonymes_cible'], [['vélo', 'fiets', 'de', ''], ['Vélo', 'rijwiel', 'het', '']])],
+    }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([{
+      sheet: 'Liste 4.1', row: 3, column: 'fr',
+      message: '« Vélo » apparaît plusieurs fois avec des traductions différentes (homonymie voulue ?)',
+    }]);
+  });
+
+  it('banc / banque vers « bank » : avertissement sur la cible, ligne 3', () => {
+    const r = parseChapter(book({
+      lists: [sheet('L', ['fr', 'cible', 'article'], [['banc', 'bank', 'de'], ['banque', 'bank', 'de']])],
+    }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.warnings).toEqual([{
+      sheet: 'L', row: 3, column: 'cible',
+      message: '« bank » apparaît plusieurs fois avec des mots français différents (homonymie voulue ?)',
+    }]);
+  });
+
+  it('un classeur valide sans répétition donne warnings vide', () => {
+    const r = parseChapter(book());
+    expect(r.ok && r.warnings).toEqual([]);
   });
 });

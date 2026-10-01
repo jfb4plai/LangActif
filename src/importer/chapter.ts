@@ -42,7 +42,7 @@ export interface ParsedChapter {
   auteur: string | null;
   lists: ParsedList[];
 }
-export type ParseResult = { ok: true; chapter: ParsedChapter } | { ok: false; issues: ImportIssue[] };
+export type ParseResult = { ok: true; chapter: ParsedChapter; warnings: ImportIssue[] } | { ok: false; issues: ImportIssue[] };
 
 const LANGUES: Langue[] = ['en-GB', 'nl-BE'];
 const split = (s: string): string[] => s.split(';').map((x) => x.trim()).filter(Boolean);
@@ -50,6 +50,7 @@ const split = (s: string): string[] => s.split(';').map((x) => x.trim()).filter(
 /** Valide un classeur lu et produit un chapitre ; si une seule erreur, rien n'est importé. */
 export function parseChapter(wb: RawWorkbook): ParseResult {
   const issues: ImportIssue[] = [];
+  const warnings: ImportIssue[] = [];
 
   if (!wb.hasMeta) {
     return { ok: false, issues: [{ sheet: 'Méta', row: null, column: null, message: 'Feuille « Méta » absente' }] };
@@ -96,6 +97,7 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
     const words: ParsedWord[] = [];
     const seenFr = new Set<string>();
     const seenCible = new Set<string>();
+    const seenPair = new Set<string>();
     const before = issues.length;
 
     for (const row of sheet.rows) {
@@ -135,7 +137,17 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
 
       const kFr = fr.toLowerCase();
       const kCible = cible.toLowerCase();
-      if (seenFr.has(kFr) || seenCible.has(kCible)) bad('fr', `Doublon dans la liste : « ${fr} » / « ${cible} »`);
+      const pair = JSON.stringify([kFr, kCible]);
+      if (seenPair.has(pair)) {
+        bad('fr', `Doublon dans la liste : « ${fr} » / « ${cible} »`);
+      } else {
+        // Homonymie : un seul côté répété, avertissement non bloquant.
+        const warn = (column: string, message: string) =>
+          warnings.push({ sheet: sheet.name, row: row.n, column, message });
+        if (seenFr.has(kFr)) warn('fr', `« ${fr} » apparaît plusieurs fois avec des traductions différentes (homonymie voulue ?)`);
+        if (seenCible.has(kCible)) warn('cible', `« ${cible} » apparaît plusieurs fois avec des mots français différents (homonymie voulue ?)`);
+      }
+      seenPair.add(pair);
       seenFr.add(kFr);
       seenCible.add(kCible);
 
@@ -163,5 +175,5 @@ export function parseChapter(wb: RawWorkbook): ParseResult {
   }
 
   if (issues.length > 0) return { ok: false, issues };
-  return { ok: true, chapter: { langue: langue as Langue, niveau, titre, numero, auteur, lists } };
+  return { ok: true, warnings, chapter: { langue: langue as Langue, niveau, titre, numero, auteur, lists } };
 }
