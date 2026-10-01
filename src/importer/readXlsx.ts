@@ -1,10 +1,8 @@
 import ExcelJS from 'exceljs';
 import type { RawRow, RawSheet, RawWorkbook } from './chapter';
+import { MAX_COLS, MAX_FILE_BYTES, MAX_ROWS, MAX_SHEETS } from './limits';
 
-export const MAX_FILE_BYTES = 2_000_000;
-export const MAX_SHEETS = 40;
-export const MAX_ROWS = 1000;
-export const MAX_COLS = 20;
+export { MAX_COLS, MAX_FILE_BYTES, MAX_ROWS, MAX_SHEETS };
 
 /** Clé comparable : sans accents, minuscules, sans espaces autour. */
 export function normalizeKey(s: string): string {
