@@ -124,17 +124,17 @@ export function Auth({ passwordRecovery = false, onPasswordUpdated }: Props) {
       </form>
       <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {mode !== 'reset' && (
-          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 14 }} onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}>
+          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 16 }} onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}>
             {mode === 'signin' ? 'Pas encore de compte ? Créer un compte' : 'Déjà un compte ? Se connecter'}
           </button>
         )}
         {mode === 'signin' && (
-          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 14 }} onClick={() => switchMode('reset')}>
+          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 16 }} onClick={() => switchMode('reset')}>
             Mot de passe oublié ?
           </button>
         )}
         {mode === 'reset' && (
-          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 14 }} onClick={() => switchMode('signin')}>
+          <button type="button" className="plai-nav-link" style={{ textAlign: 'left', fontSize: 16 }} onClick={() => switchMode('signin')}>
             Retour à la connexion
           </button>
         )}

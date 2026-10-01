@@ -20,11 +20,25 @@ table.lang-table th {
 
 .lang-badge {
   display: inline-block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   padding: 2px 10px;
   border-radius: 20px;
   background: var(--teal-bg);
   color: var(--teal);
   border: 1px solid var(--teal-border);
+}
+
+/* Règle PLAI : texte lisible (16 px) et cibles tactiles d'au moins 44 px */
+.plai-btn,
+.plai-btn-ghost {
+  font-size: 16px;
+  min-height: 44px;
+}
+.plai-nav-link {
+  font-size: 16px;
+  min-height: 44px;
+}
+.plai-input {
+  font-size: 16px;
 }

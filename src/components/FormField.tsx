@@ -38,7 +38,7 @@ export function FormField({ label, help, error, required, style, children }: For
       </label>
       {field}
       {help && (
-        <p id={helpId} style={{ fontSize: 14, color: 'var(--text2)', marginTop: 4 }}>
+        <p id={helpId} style={{ fontSize: 16, color: 'var(--text2)', marginTop: 4 }}>
           {help}
         </p>
       )}
