@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "LangActif : vocabulaire de langues étrangères, moteur pur",
+  "description": "LangActif : vocabulaire de langues étrangères pour les élèves du secondaire (application et moteur)",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
