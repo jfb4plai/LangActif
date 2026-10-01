@@ -1,8 +1,8 @@
 # LangActif : Design
 
 Date : 2026-10-01
-Statut : brouillon validé section par section avec JF, à relire avant plan d'implémentation
-Nom : provisoire (suffixe -Actif, sous-domaine cible `langactif.jfb4plai.com`)
+Statut : validé par JF le 2026-10-01, prêt pour le plan d'implémentation
+Nom : LangActif (définitif, sous-domaine cible `langactif.jfb4plai.com`)
 
 ## 1. Contexte et objectif
 
@@ -291,9 +291,8 @@ Enregistrement vocal de l'élève, classement, duels asynchrones entre classes, 
 
 ## 20. Questions ouvertes
 
-1. Nom définitif de l'app.
-2. Durée de conservation du journal détaillé et place restante sur le Supabase partagé.
-3. Cadre RGPD avec les écoles (information aux familles, hébergement).
-4. Validation des listes partagées : qui corrige les erreurs et les droits sur les contenus de manuels.
-5. Stabilité d'edge-tts sur la durée, et plan de repli.
-6. Création du dépôt GitHub `jfb4plai/LangActif` par JF avant l'implémentation.
+1. Durée de conservation du journal détaillé et place restante sur le Supabase partagé.
+2. Cadre RGPD avec les écoles (information aux familles, hébergement).
+3. Validation des listes partagées : qui corrige les erreurs et les droits sur les contenus de manuels.
+4. Stabilité d'edge-tts sur la durée, et plan de repli.
+5. Création du dépôt GitHub `jfb4plai/LangActif` par JF avant l'implémentation.
