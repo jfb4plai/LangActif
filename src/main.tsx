@@ -3,9 +3,10 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import './plai-style.css';
 import './overrides.css';
+import App from './App';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <p className="plai-empty">LangActif</p>
+    <App />
   </StrictMode>,
 );
