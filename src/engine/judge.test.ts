@@ -95,3 +95,42 @@ describe('judge, anglais (sans article)', () => {
     expect(judge({ word: chair, direction: 'fr_to_l', answer: 'chiar', listWords: only }).verdict).toBe('presque');
   });
 });
+
+describe('judge, article néerlandais jamais « presque »', () => {
+  const meisje: Word = { id: 'w4', fr: 'fille', cible: 'meisje', article: 'het', synonymesFr: [], synonymesCible: [] };
+  it('faux + mauvais_article pour « het straat » (de straat)', () => {
+    const r = j(straat, 'fr_to_l', 'het straat');
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('mauvais_article');
+  });
+  it('faux + mauvais_article pour « de meisje » (het meisje)', () => {
+    const r = judge({ word: meisje, direction: 'fr_to_l', answer: 'de meisje', listWords: [...list, meisje] });
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('mauvais_article');
+  });
+  it('presque quand seule la majuscule de l\'article diffère (strict)', () => {
+    const r = j(fiets, 'fr_to_l', 'De fiets');
+    expect(r.verdict).toBe('presque');
+    expect(r.errorType).toBe('orthographe_proche');
+  });
+  it('presque pour une faute dans le nom avec le bon article', () => {
+    expect(j(fiets, 'fr_to_l', 'de fiest').verdict).toBe('presque');
+  });
+});
+
+describe('judge, confusion avant « presque »', () => {
+  it('anglais : un autre mot de la liste tapé juste donne confusion_liste', () => {
+    const horse: Word = { id: 'e2', fr: 'cheval', cible: 'horse', article: null, synonymesFr: [], synonymesCible: [] };
+    const house: Word = { id: 'e3', fr: 'maison', cible: 'house', article: null, synonymesFr: [], synonymesCible: [] };
+    const r = judge({ word: horse, direction: 'fr_to_l', answer: 'house', listWords: [horse, house] });
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('confusion_liste');
+  });
+  it('vers le français : pain / main', () => {
+    const pain: Word = { id: 'f1', fr: 'pain', cible: 'brood', article: 'het', synonymesFr: [], synonymesCible: [] };
+    const main: Word = { id: 'f2', fr: 'main', cible: 'hand', article: 'de', synonymesFr: [], synonymesCible: [] };
+    const r = judge({ word: pain, direction: 'l_to_fr', answer: 'main', listWords: [pain, main] });
+    expect(r.verdict).toBe('faux');
+    expect(r.errorType).toBe('confusion_liste');
+  });
+});

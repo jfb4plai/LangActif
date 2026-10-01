@@ -53,20 +53,63 @@ function compare(answer: string, form: string, tol: Tolerance): Level {
   return damerau(a, f) <= maxTypos(f.length) ? 'presque' : 'faux';
 }
 
-function hasArticleProblem(answer: string, word: Word, tol: Tolerance): boolean {
-  const [first, ...rest] = answer.split(' ');
-  if (ARTICLES.includes(first.toLowerCase()) && rest.length > 0) {
-    return first.toLowerCase() !== word.article && compare(rest.join(' '), word.cible, tol) !== 'faux';
-  }
-  // article manquant : le nom est reconnu sans article
-  return compare(answer, word.cible, tol) !== 'faux';
+function best(levels: Level[]): Level {
+  return levels.reduce((x, y) => (RANK[y] < RANK[x] ? y : x), 'faux' as Level);
 }
 
-function matchesOtherWord(answer: string, word: Word, listWords: Word[], direction: Direction, tol: Tolerance): boolean {
+function worst(a: Level, b: Level): Level {
+  return RANK[a] >= RANK[b] ? a : b;
+}
+
+interface Evaluation {
+  level: Level;
+  /** Le nom est reconnu mais l'article est absent ou faux. */
+  articleIssue: boolean;
+}
+
+/** Néerlandais vers la langue cible : article et nom sont jugés séparément. */
+function evaluateWithArticle(answer: string, word: Word, article: string, tol: Tolerance): Evaluation {
+  const space = answer.indexOf(' ');
+  const first = space === -1 ? '' : answer.slice(0, space);
+  const rest = space === -1 ? '' : answer.slice(space + 1);
+  const hasArticle = ARTICLES.includes(first.toLowerCase()) && rest !== '';
+  const answerArticle = hasArticle ? first : null;
+  const noun = hasArticle ? rest : answer;
+
+  const nounLevel = compare(noun, word.cible, tol);
+  if (nounLevel === 'faux') return { level: 'faux', articleIssue: false };
+  if (answerArticle === null || answerArticle.toLowerCase() !== article) {
+    return { level: 'faux', articleIssue: true };
+  }
+  const articleLevel: Level = answerArticle !== article && !tol.casse ? 'presque' : 'juste';
+  return { level: worst(nounLevel, articleLevel), articleIssue: false };
+}
+
+function evaluate(answer: string, word: Word, direction: Direction, tol: Tolerance): Evaluation {
+  if (direction === 'fr_to_l' && word.article) {
+    const primary = evaluateWithArticle(answer, word, word.article, tol);
+    const synonyms = word.synonymesCible.map((f) => compare(answer, f, tol));
+    const bestSynonym = best(synonyms);
+    if (RANK[bestSynonym] < RANK[primary.level]) return { level: bestSynonym, articleIssue: false };
+    return primary;
+  }
+  return { level: best(acceptedForms(word, direction).map((f) => compare(answer, f, tol))), articleIssue: false };
+}
+
+/** Une forme d'un AUTRE mot de la liste est reconnue au moins au niveau demandé. */
+function matchesOtherWord(
+  answer: string,
+  word: Word,
+  listWords: Word[],
+  direction: Direction,
+  tol: Tolerance,
+  exactOnly: boolean,
+): boolean {
   for (const other of listWords) {
     if (other.id === word.id) continue;
     for (const form of acceptedForms(other, direction)) {
-      if (compare(answer, form, tol) !== 'faux') return true;
+      const level = compare(answer, form, tol);
+      if (exactOnly ? level === 'juste' : level !== 'faux') return true;
     }
   }
   return false;
@@ -75,24 +118,21 @@ function matchesOtherWord(answer: string, word: Word, listWords: Word[], directi
 export function judge(input: JudgeInput): JudgeResult {
   const { word, direction, listWords } = input;
   const tol = input.tolerance ?? defaultTolerance(direction);
-  const forms = acceptedForms(word, direction);
-  const expected = forms[0];
+  const expected = acceptedForms(word, direction)[0];
   const answer = clean(input.answer);
 
   if (answer === '') return { verdict: 'sans_reponse', errorType: 'sans_reponse', expected };
 
-  let best: Level = 'faux';
-  for (const form of forms) {
-    const level = compare(answer, form, tol);
-    if (RANK[level] < RANK[best]) best = level;
-  }
-  if (best === 'juste') return { verdict: 'juste', errorType: null, expected };
-  if (best === 'presque') return { verdict: 'presque', errorType: 'orthographe_proche', expected };
+  const { level, articleIssue } = evaluate(answer, word, direction, tol);
+  if (level === 'juste') return { verdict: 'juste', errorType: null, expected };
 
-  if (direction === 'fr_to_l' && word.article && hasArticleProblem(answer, word, tol)) {
-    return { verdict: 'faux', errorType: 'mauvais_article', expected };
+  // Un autre mot de la liste tapé exactement passe avant « presque » et avant l'article.
+  if (matchesOtherWord(answer, word, listWords, direction, tol, true)) {
+    return { verdict: 'faux', errorType: 'confusion_liste', expected };
   }
-  if (matchesOtherWord(answer, word, listWords, direction, tol)) {
+  if (articleIssue) return { verdict: 'faux', errorType: 'mauvais_article', expected };
+  if (level === 'presque') return { verdict: 'presque', errorType: 'orthographe_proche', expected };
+  if (matchesOtherWord(answer, word, listWords, direction, tol, false)) {
     return { verdict: 'faux', errorType: 'confusion_liste', expected };
   }
   return { verdict: 'faux', errorType: 'autre', expected };
