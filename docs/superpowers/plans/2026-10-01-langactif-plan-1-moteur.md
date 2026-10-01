@@ -2128,11 +2128,11 @@ Exécuté par sous-agents sur la branche `feat/plan-1-moteur`, tâche par tâche
    - `wheel.ts` : insensible à la forme Unicode.
    - Points d'entrée séparés : `src/engine/index.ts` (pur) et `src/importer/index.ts` (exceljs). `src/index.ts` supprimé. Champ `blocId` ajouté au journal.
 
-**Décisions encore ouvertes (à trancher avant le plan 2 ou 3)**
+**Décisions (I2 et I10 tranchées ; le reste se tranchera au moment voulu)**
 
-- **I2, synonymes en néerlandais et article** : un synonyme n'est pas préfixé de l'article ; « rijwiel » sans article est jugé `juste`, « het rijwiel » est jugé `faux`. À décider : le synonyme porte son article dans la cellule, ou format dédié.
+- ~~I2, synonymes en néerlandais et article~~ : TRANCHÉ par JF le 2026-10-01. L'article figure dans la cellule Excel quand le mot en a un, et les synonymes néerlandais portent leur propre article (« het rijwiel »). `judge` les juge comme le mot principal ; l'importeur refuse un synonyme sans article quand le mot en a un.
 - **I7, nouvelle frappe après « presque »** : si l'application journalise la nouvelle frappe comme une réponse `juste` normale, la carte monte, ce que le spec interdit. À décider au plan 3 : la nouvelle frappe n'est pas un événement Leitner, ou elle porte un marqueur ignoré.
-- **I10, homonymes** : « banc » et « banque » vers « bank » bloquent l'import comme doublon. À décider : ne bloquer que si le couple fr + cible est identique.
+- ~~I10, homonymes~~ : TRANCHÉ par JF le 2026-10-01. Seul un couple (fr, cible) identique bloque l'import ; un fr ou une cible répété avec un autre partenaire donne un avertissement (`warnings` dans `ParseResult`).
 - **Aide dans le modèle Excel** : une ligne d'aide en ligne 2 serait importée comme un mot. À décider au plan 2 (commentaire de cellule ou ligne marquée).
 - **Vulnérabilités `npm audit`** : toutes en dépendances de développement (vitest, vite, esbuild) ou non atteignables (uuid via exceljs). Ne pas lancer `npm audit fix --force` (il rétrograde exceljs). Monter vitest à la version 4.1.11 ou plus à un moment calme.
 - **Lecture d'un fichier déposé par un utilisateur** : les limites ne couvrent pas une bombe zip (décompression en mémoire). Lire dans un Web Worker ou côté serveur avec un délai maximal (plan 2).
