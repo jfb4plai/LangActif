@@ -21,6 +21,7 @@ type Parsed = { chapter: ParsedChapter; warnings: ImportIssue[] };
 export function ImportChapter({ client, onDone, onCancel }: Props) {
   const [templateLangue, setTemplateLangue] = useState<Langue>('nl-BE');
   const [reading, setReading] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [issues, setIssues] = useState<ImportIssue[]>([]);
   const [parsed, setParsed] = useState<Parsed | null>(null);
@@ -55,6 +56,7 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
     setReadError(null);
     setSaveError(null);
     const current = ++requestId.current;
+    setFileName(file ? file.name : null);
     if (!file) {
       setReading(false);
       return;
@@ -113,13 +115,22 @@ export function ImportChapter({ client, onDone, onCancel }: Props) {
           label="Classeur Excel (.xlsx)"
           help="2 Mo maximum. Le fichier est vérifié dans votre navigateur ; rien n'est enregistré avant votre confirmation à l'étape suivante."
         >
-          <input className="plai-input" type="file" accept=".xlsx" onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = '';
-              onFile(f);
-            }} />
+          {/* le champ est vidé à l'ouverture de la fenêtre de choix (pas après) : il affiche le nom du fichier lu,
+              et rechoisir le même fichier après correction déclenche bien une nouvelle lecture */}
+          <input
+            className="plai-input"
+            type="file"
+            accept=".xlsx"
+            onClick={(e) => {
+              e.currentTarget.value = '';
+            }}
+            onChange={(e) => onFile(e.target.files?.[0])}
+          />
         </FormField>
-        {reading && <p aria-live="polite">Lecture du fichier...</p>}
+        {fileName && !reading && (parsed || issues.length > 0 || readError) && (
+          <p style={{ color: 'var(--text2)', marginBottom: 8 }}>Fichier lu : <strong>{fileName}</strong></p>
+        )}
+        {reading && <p aria-live="polite">Lecture du fichier {fileName ? `« ${fileName} »` : ''}...</p>}
         {readError && <div className="plai-error" role="alert">{readError}</div>}
         {issues.length > 0 && (
           <div className="plai-error" role="alert">
