@@ -34,6 +34,13 @@ export function Layout({ children, userEmail, onSignOut, onHome }: LayoutProps) 
         <p>
           <a href="mailto:jf.beguin@outlook.com">jf.beguin@outlook.com</a>
         </p>
+        <p>
+          Code :{' '}
+          <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>
+          {' · '}Contenus :{' '}
+          <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.fr" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>
+          {' · '}Jean-François Beguin, jfb4plai.com
+        </p>
       </footer>
     </>
   );
