@@ -77,7 +77,8 @@ export function ChapterDetail({ client, id, onBack }: Props) {
               <tr>
                 <th scope="col">Français</th>
                 <th scope="col">Langue cible</th>
-                <th scope="col">Synonymes</th>
+                <th scope="col">Synonymes français</th>
+                <th scope="col">Synonymes langue cible</th>
                 <th scope="col">Phrase exemple</th>
               </tr>
             </thead>
@@ -86,7 +87,8 @@ export function ChapterDetail({ client, id, onBack }: Props) {
                 <tr key={w.id}>
                   <td>{w.fr}</td>
                   <td>{w.article ? `${w.article} ${w.cible}` : w.cible}</td>
-                  <td>{[...w.synonymes_fr, ...w.synonymes_cible].join(' ; ')}</td>
+                  <td>{w.synonymes_fr.join(' ; ')}</td>
+                  <td>{w.synonymes_cible.join(' ; ')}</td>
                   <td>
                     {w.phrase_cible ?? ''}
                     {w.phrase_fr && <span style={{ display: 'block', color: 'var(--text2)' }}>{w.phrase_fr}</span>}
