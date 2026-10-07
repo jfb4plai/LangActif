@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/eleve", "destination": "/index.html" },
+    { "source": "/eleve/:path*", "destination": "/index.html" }
+  ]
 }
