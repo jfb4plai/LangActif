@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:sql": "node supabase/tests/run-local.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -18,6 +19,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
