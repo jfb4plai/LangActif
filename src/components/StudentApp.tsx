@@ -21,7 +21,7 @@ function failureMessage(r: Extract<LoginResult, { ok: false }>): string {
   switch (r.reason) {
     case 'bloque': {
       const minutes = Math.max(1, Math.ceil((r.retryAfterSeconds ?? 900) / 60));
-      return `Trop d'essais. Demande à ton enseignant ou réessaie dans ${minutes} minutes.`;
+      return `Trop d'essais. Demande à ton enseignant ou réessaie dans ${minutes} ${minutes > 1 ? 'minutes' : 'minute'}.`;
     }
     case 'trop_de_tentatives':
       return "Trop d'essais depuis cet appareil. Réessaie dans quelques minutes.";
@@ -63,7 +63,7 @@ export function StudentApp() {
   };
 
   return (
-    <Layout>
+    <Layout studentMode>
       {phase === 'loading' && <p aria-live="polite">Chargement...</p>}
       {phase === 'login' && (
         <Login
@@ -95,6 +95,8 @@ function Login({ networkNote, onLoggedIn }: { networkNote: boolean; onLoggedIn: 
   const [groupe, setGroupe] = useState(() => groupCodeFromSearch(window.location.search));
   const [pseudos, setPseudos] = useState<string[] | null>(null);
   const [unknownGroup, setUnknownGroup] = useState(false);
+  const [networkProblem, setNetworkProblem] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [pseudo, setPseudo] = useState('');
   const [code, setCode] = useState('');
   const [partage, setPartage] = useState(false);
@@ -105,20 +107,22 @@ function Login({ networkNote, onLoggedIn }: { networkNote: boolean; onLoggedIn: 
   useEffect(() => {
     setPseudo('');
     setUnknownGroup(false);
+    setNetworkProblem(false);
     if (!/^[A-Z0-9]{5}$/.test(groupe)) {
       setPseudos(null);
       return;
     }
     let alive = true;
-    fetchPseudos(groupe).then((list) => {
+    fetchPseudos(groupe).then((result) => {
       if (!alive) return;
-      setPseudos(list);
-      setUnknownGroup(list === null);
+      setPseudos(result.status === 'ok' ? result.pseudos : null);
+      setUnknownGroup(result.status === 'inconnu');
+      setNetworkProblem(result.status === 'reseau');
     });
     return () => {
       alive = false;
     };
-  }, [groupe]);
+  }, [groupe, retry]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -146,7 +150,13 @@ function Login({ networkNote, onLoggedIn }: { networkNote: boolean; onLoggedIn: 
         <FormField
           label="Code du groupe"
           help="Ton enseignant te le donne. Si tu as scanné le QR code, il est déjà écrit."
-          error={unknownGroup ? 'Ce groupe est introuvable. Vérifie le code.' : undefined}
+          error={
+            unknownGroup
+              ? 'Ce groupe est introuvable. Vérifie le code.'
+              : networkProblem
+                ? 'Connexion impossible : vérifie ton réseau. Ton code de groupe n\'est pas en cause.'
+                : undefined
+          }
         >
           <input
             className="plai-input"
@@ -158,6 +168,12 @@ function Login({ networkNote, onLoggedIn }: { networkNote: boolean; onLoggedIn: 
             onChange={(e) => setGroupe(e.target.value.trim().toUpperCase())}
           />
         </FormField>
+
+        {networkProblem && (
+          <button type="button" className="plai-btn-ghost" style={{ marginBottom: 16 }} onClick={() => setRetry((n) => n + 1)}>
+            Réessayer
+          </button>
+        )}
 
         {pseudos && (
           <fieldset style={{ border: 'none', padding: 0, margin: '0 0 1rem' }}>
@@ -192,7 +208,8 @@ function Login({ networkNote, onLoggedIn }: { networkNote: boolean; onLoggedIn: 
             <span>Je suis sur un appareil de l'école (tablette ou ordinateur partagé)</span>
           </label>
           <p style={{ fontSize: 16, color: 'var(--text2)', marginTop: 4 }}>
-            Coche cette case si d'autres élèves utilisent le même appareil : tu seras déconnecté au bout de quelques heures.
+            Coche cette case si d'autres élèves utilisent le même appareil, par exemple une tablette de l'école. Sinon, la personne qui
+            utilisera cet appareil après toi pourrait entrer avec ton pseudo. Cochée, tu seras déconnecté au bout de quelques heures.
           </p>
         </div>
 

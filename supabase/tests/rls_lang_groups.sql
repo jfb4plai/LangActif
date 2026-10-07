@@ -178,6 +178,52 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"UUID_COMPTE_A","role":"authenticated"}', true);
 select public.lang_seat_unlock(current_setting('lang.test_seat_id')::uuid);
 
+-- 6b) Blocage progressif : 1 min, 5 min, 15 min (plafond) ; oubli des échecs vieux d'une heure.
+-- now() est figé pendant la transaction : on simule le temps qui passe en modifiant les colonnes.
+set local role service_role;
+do $$
+declare
+  g text := current_setting('lang.test_code');
+  p text := current_setting('lang.test_seat_pseudo');
+  s uuid := current_setting('lang.test_seat_id')::uuid;
+  wrong text := case when current_setting('lang.test_seat_secret') = 'A222' then 'A223' else 'A222' end;
+  r jsonb;
+  i integer;
+  secs integer[] := array[60, 300, 900, 900];
+  k integer;
+begin
+  for k in 1..4 loop
+    for i in 1..4 loop
+      r := public.lang_student_login(g, p, wrong, false);
+      assert r->>'reason' = 'invalide', 'avant le 5e échec : pas de blocage';
+    end loop;
+    r := public.lang_student_login(g, p, wrong, false);
+    assert r->>'reason' = 'bloque' and (r->>'retry_after_seconds')::integer = secs[k],
+      'blocage n° ' || k || ' : durée attendue ' || secs[k];
+    assert (select lock_level from public.lang_students where id = s) = least(k, 3), 'échelon de blocage';
+    update public.lang_students set locked_until = now() - interval '1 second' where id = s;
+  end loop;
+
+  -- échecs et échelon vieux de deux heures : oubliés
+  update public.lang_students
+    set failed_attempts = 4, lock_level = 3, last_failed_at = now() - interval '2 hours', locked_until = null
+    where id = s;
+  r := public.lang_student_login(g, p, wrong, false);
+  assert r->>'reason' = 'invalide', 'échecs anciens oubliés : pas de blocage';
+  assert (select failed_attempts from public.lang_students where id = s) = 1, 'compteur repart à 1';
+  assert (select lock_level from public.lang_students where id = s) = 0, 'échelon remis à 0';
+end $$;
+
+-- 6c) L'enseignant débloque : l'échelon revient à 0 et il peut le lire (colonne autorisée)
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"UUID_COMPTE_A","role":"authenticated"}', true);
+select public.lang_seat_unlock(current_setting('lang.test_seat_id')::uuid);
+do $$
+begin
+  assert (select lock_level from public.lang_students where id = current_setting('lang.test_seat_id')::uuid) = 0,
+    'déblocage : échelon à 0, colonne lisible par l''enseignant';
+end $$;
+
 -- 7) Connexion réussie, session personnelle glissante, appareil partagé, déconnexion
 set local role service_role;
 do $$

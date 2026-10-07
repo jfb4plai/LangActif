@@ -17,6 +17,8 @@ export interface SeatRow {
   group_id: string;
   pseudo: string;
   failed_attempts: number;
+  /** Échelon de blocage (0 à 3) : 2 ou plus = blocages répétés. */
+  lock_level: number;
   locked_until: string | null;
   last_seen_at: string | null;
   archived_at: string | null;
@@ -75,7 +77,7 @@ export async function getGroup(client: SupabaseClient, id: string): Promise<Grou
     .from('lang_groups')
     .select(
       'id, nom, langue, code, archived_at, created_at, ' +
-        'lang_students(id, group_id, pseudo, failed_attempts, locked_until, last_seen_at, archived_at, created_at)',
+        'lang_students(id, group_id, pseudo, failed_attempts, lock_level, locked_until, last_seen_at, archived_at, created_at)',
     )
     .eq('id', id)
     .single();

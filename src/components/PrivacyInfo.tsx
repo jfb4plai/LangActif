@@ -10,8 +10,10 @@ export function PrivacyInfo() {
         <li>Elle ne connaît pas ton adresse e-mail.</li>
         <li>Ton enseignant sait quel pseudo est le tien.</li>
         <li>Ton enseignant peut voir ton travail dans LangActif.</li>
-        <li>Ton enseignant peut effacer ton pseudo et ton travail.</li>
+        <li>Tes données restent tant que ton enseignant garde ta place dans son groupe.</li>
+        <li>Ton enseignant peut effacer ton pseudo et ton travail quand il veut.</li>
         <li>Tu peux lui demander de les effacer.</li>
+        <li>La durée exacte n'est pas encore fixée.</li>
         <li>Si tu as une question, parle à ton enseignant.</li>
       </ul>
     </details>

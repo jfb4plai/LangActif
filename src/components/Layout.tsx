@@ -12,9 +12,11 @@ interface LayoutProps {
   onSignOut?: () => void;
   onHome?: () => void;
   nav?: NavItem[];
+  /** Écran élève : pas d'adresse e-mail personnelle, on renvoie vers l'enseignant. */
+  studentMode?: boolean;
 }
 
-export function Layout({ children, userEmail, onSignOut, onHome, nav }: LayoutProps) {
+export function Layout({ children, userEmail, onSignOut, onHome, nav, studentMode }: LayoutProps) {
   return (
     <>
       <nav className="plai-nav">
@@ -50,9 +52,7 @@ export function Layout({ children, userEmail, onSignOut, onHome, nav }: LayoutPr
       <footer className="plai-footer">
         <img src="/plai-logo.jpg" alt="PLAI" style={{ height: 40, width: 'auto', margin: '0 auto 0.75rem' }} />
         <p>LangActif, un outil du Pôle Territorial de la Ville de Liège (PLAI)</p>
-        <p>
-          <a href="mailto:jf.beguin@outlook.com">jf.beguin@outlook.com</a>
-        </p>
+        <p>{studentMode ? 'Une question ? Parles-en à ton enseignant.' : <a href="mailto:jf.beguin@outlook.com">jf.beguin@outlook.com</a>}</p>
         <p>
           Code :{' '}
           <a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>

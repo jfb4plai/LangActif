@@ -30,7 +30,7 @@ function rpcClient(data: unknown, error: { message: string } | null = null) {
 }
 
 const seat = (over: Partial<SeatRow> = {}): SeatRow => ({
-  id: 's1', group_id: 'g1', pseudo: 'Meuse', failed_attempts: 0, locked_until: null,
+  id: 's1', group_id: 'g1', pseudo: 'Meuse', failed_attempts: 0, lock_level: 0, locked_until: null,
   last_seen_at: null, archived_at: null, created_at: '2026-10-07T08:00:00Z', ...over,
 });
 

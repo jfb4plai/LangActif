@@ -61,11 +61,18 @@ describe('loginStudent', () => {
 
 describe('fetchPseudos', () => {
   it('renvoie la liste', async () => {
-    expect(await fetchPseudos('K7M4X', async () => jsonResponse(200, { pseudos: ['Meuse', 'Orion'] }))).toEqual(['Meuse', 'Orion']);
+    expect(await fetchPseudos('K7M4X', async () => jsonResponse(200, { pseudos: ['Meuse', 'Orion'] }))).toEqual({
+      status: 'ok', pseudos: ['Meuse', 'Orion'],
+    });
   });
-  it('null si groupe inconnu ou réseau coupé', async () => {
-    expect(await fetchPseudos('ZZZZZ', async () => jsonResponse(404, { error: 'x' }))).toBeNull();
-    expect(await fetchPseudos('ZZZZZ', async () => { throw new Error('offline'); })).toBeNull();
+  it('groupe inconnu : inconnu', async () => {
+    expect(await fetchPseudos('ZZZZZ', async () => jsonResponse(404, { error: 'x' }))).toEqual({ status: 'inconnu' });
+    expect(await fetchPseudos('ZZZZZ', async () => jsonResponse(200, { pseudos: [] }))).toEqual({ status: 'inconnu' });
+  });
+  it('réseau coupé ou serveur en panne : reseau, jamais « groupe introuvable »', async () => {
+    expect(await fetchPseudos('K7M4X', async () => { throw new Error('offline'); })).toEqual({ status: 'reseau' });
+    expect(await fetchPseudos('K7M4X', async () => jsonResponse(500, {}))).toEqual({ status: 'reseau' });
+    expect(await fetchPseudos('K7M4X', async () => jsonResponse(502, {}))).toEqual({ status: 'reseau' });
   });
 });
 

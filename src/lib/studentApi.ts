@@ -15,14 +15,18 @@ export interface LoginInput {
   appareilPartage: boolean;
 }
 
-export async function fetchPseudos(groupCode: string, f: Fetch = fetch): Promise<string[] | null> {
+export type PseudosResult = { status: 'ok'; pseudos: string[] } | { status: 'inconnu' } | { status: 'reseau' };
+
+/** 'inconnu' : le groupe n'existe pas (ou plus). 'reseau' : impossible de savoir (coupure, serveur en panne). */
+export async function fetchPseudos(groupCode: string, f: Fetch = fetch): Promise<PseudosResult> {
   try {
     const r = await f(`/api/student-list-pseudos?g=${encodeURIComponent(groupCode)}`);
-    if (!r.ok) return null;
+    if (r.status === 404 || r.status === 400) return { status: 'inconnu' };
+    if (!r.ok) return { status: 'reseau' };
     const d = (await r.json()) as { pseudos?: string[] };
-    return d.pseudos ?? null;
+    return d.pseudos && d.pseudos.length > 0 ? { status: 'ok', pseudos: d.pseudos } : { status: 'inconnu' };
   } catch {
-    return null;
+    return { status: 'reseau' };
   }
 }
 

@@ -130,6 +130,10 @@ export function GroupDetail({ client, id, onBack }: Props) {
 
       <div className="plai-card" style={{ overflowX: 'auto' }}>
         <h2 className="font-serif" style={{ fontSize: 20, marginBottom: 8 }}>Places</h2>
+        <p style={{ color: 'var(--text2)', marginBottom: 8 }}>
+          Un pseudo marqué « blocages répétés » peut signaler que quelqu'un d'autre que l'élève essaie d'y entrer. Parlez-en au
+          groupe, puis débloquez la place.
+        </p>
         <table className="lang-table lang-table-stack">
           <thead>
             <tr>
@@ -145,7 +149,10 @@ export function GroupDetail({ client, id, onBack }: Props) {
               return (
                 <tr key={s.id}>
                   <td data-label="Pseudo">{s.pseudo}</td>
-                  <td data-label="État">{STATE_LABEL[state]}</td>
+                  <td data-label="État">
+                    {STATE_LABEL[state]}
+                    {s.lock_level >= 2 && state !== 'archive' ? ' (blocages répétés)' : ''}
+                  </td>
                   <td data-label="Dernière activité">{s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString('fr-BE') : 'Aucune'}</td>
                   <td>
                     {state !== 'archive' && !archived && (

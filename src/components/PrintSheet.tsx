@@ -55,6 +55,10 @@ export function PrintSheet({ title, slips, doneLabel, onDone }: Props) {
           Écrivez le nom de l'élève au crayon sur sa bande. La correspondance entre le pseudo et le nom reste dans votre carnet,
           jamais dans l'application.
         </p>
+        <p style={{ margin: '12px 0' }}>
+          Si les élèves utilisent des tablettes ou des ordinateurs de l'école, rappelez-leur de cocher la case « appareil de l'école »
+          à la connexion. Sans cela, l'élève suivant pourrait entrer avec le pseudo du précédent.
+        </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
           <button type="button" className="plai-btn" onClick={() => window.print()}>Imprimer les fiches</button>
           <button type="button" className="plai-btn-ghost" onClick={onDone}>{doneLabel}</button>
