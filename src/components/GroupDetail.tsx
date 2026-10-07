@@ -130,7 +130,7 @@ export function GroupDetail({ client, id, onBack }: Props) {
 
       <div className="plai-card" style={{ overflowX: 'auto' }}>
         <h2 className="font-serif" style={{ fontSize: 20, marginBottom: 8 }}>Places</h2>
-        <table className="lang-table">
+        <table className="lang-table lang-table-stack">
           <thead>
             <tr>
               <th scope="col">Pseudo</th>
@@ -144,9 +144,9 @@ export function GroupDetail({ client, id, onBack }: Props) {
               const state = seatState(s);
               return (
                 <tr key={s.id}>
-                  <td>{s.pseudo}</td>
-                  <td>{STATE_LABEL[state]}</td>
-                  <td>{s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString('fr-BE') : ''}</td>
+                  <td data-label="Pseudo">{s.pseudo}</td>
+                  <td data-label="État">{STATE_LABEL[state]}</td>
+                  <td data-label="Dernière activité">{s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString('fr-BE') : ''}</td>
                   <td>
                     {state !== 'archive' && !archived && (
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

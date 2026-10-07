@@ -46,10 +46,48 @@ table.lang-table th {
 /* Téléphone : la barre de navigation ne doit pas déborder */
 @media (max-width: 520px) {
   .plai-nav {
-    padding: 0 1rem;
+    padding: 0.25rem 1rem;
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .plai-nav-actions {
+    flex-wrap: wrap;
+  }
+  .plai-nav-link {
+    white-space: nowrap;
   }
   .lang-nav-email {
     display: none;
+  }
+
+  /* Tableau des places : une carte par place, sans défilement horizontal */
+  table.lang-table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  table.lang-table-stack,
+  table.lang-table-stack tbody,
+  table.lang-table-stack tr,
+  table.lang-table-stack td {
+    display: block;
+    width: 100%;
+  }
+  table.lang-table-stack tr {
+    border-bottom: 2px solid var(--border);
+    padding: 0.5rem 0;
+  }
+  table.lang-table-stack td {
+    border-bottom: none;
+    padding: 0.25rem 0.2rem;
+  }
+  table.lang-table-stack td[data-label]::before {
+    content: attr(data-label) " : ";
+    font-weight: 600;
+    color: var(--text2);
   }
 }
 
