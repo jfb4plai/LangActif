@@ -9,7 +9,15 @@ const RULES: Array<{ match: string[]; text: string }> = [
 export function friendlyError(message: string): string {
   const lower = message.toLowerCase();
   // messages de nos fonctions SQL : déjà en français, conservés tels quels
-  if (message.includes('Limite de') || message.includes('Nombre de listes invalide') || message.includes("Pas d'article en anglais")) {
+  const FRENCH_SQL_MESSAGES = [
+    'Limite de',
+    'Nombre de listes invalide',
+    'Nombre de places invalide',
+    "Pas d'article en anglais",
+    'introuvable ou non autoris',
+    'Groupe archivé',
+  ];
+  if (FRENCH_SQL_MESSAGES.some((m) => message.includes(m))) {
     return message;
   }
   return RULES.find((r) => r.match.some((m) => lower.includes(m)))?.text ?? message;

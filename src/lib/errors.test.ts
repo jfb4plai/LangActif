@@ -16,10 +16,18 @@ describe('friendlyError', () => {
   it('compte déjà existant', () => {
     expect(friendlyError('User already registered')).toBe('Un compte existe déjà avec cette adresse : connectez-vous.');
   });
-  it.each(['Limite de 50 chapitres atteinte', 'Nombre de listes invalide', "Pas d'article en anglais", 'permission denied', 'autre'])(
-    'inchangé : %s',
-    (m) => {
-      expect(friendlyError(m)).toBe(m);
-    },
-  );
+  it.each([
+    'Limite de 50 chapitres atteinte',
+    'Limite de 100 groupes atteinte',
+    'Limite de 40 places actives par groupe atteinte',
+    'Nombre de listes invalide',
+    'Nombre de places invalide (1 à 40)',
+    'Groupe introuvable ou non autorisé',
+    'Place introuvable ou non autorisée',
+    "Pas d'article en anglais",
+    'permission denied',
+    'autre',
+  ])('inchangé : %s', (m) => {
+    expect(friendlyError(m)).toBe(m);
+  });
 });
