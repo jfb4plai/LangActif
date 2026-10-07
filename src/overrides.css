@@ -88,7 +88,7 @@ h1:focus {
 .lang-slip-app { font-weight: 700; }
 .lang-slip-code { font-size: 28px; letter-spacing: 0.15em; }
 .lang-slip-url,
-.lang-slip-name { font-size: 14px; margin-top: 6px; }
+.lang-slip-name { font-size: 16px; margin-top: 6px; }
 
 @media print {
   .plai-nav,
