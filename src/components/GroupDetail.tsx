@@ -146,7 +146,7 @@ export function GroupDetail({ client, id, onBack }: Props) {
                 <tr key={s.id}>
                   <td data-label="Pseudo">{s.pseudo}</td>
                   <td data-label="État">{STATE_LABEL[state]}</td>
-                  <td data-label="Dernière activité">{s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString('fr-BE') : ''}</td>
+                  <td data-label="Dernière activité">{s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString('fr-BE') : 'Aucune'}</td>
                   <td>
                     {state !== 'archive' && !archived && (
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
