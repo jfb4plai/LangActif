@@ -1,13 +1,20 @@
 import type { ReactNode } from 'react';
 
+interface NavItem {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
 interface LayoutProps {
   children: ReactNode;
   userEmail?: string;
   onSignOut?: () => void;
   onHome?: () => void;
+  nav?: NavItem[];
 }
 
-export function Layout({ children, userEmail, onSignOut, onHome }: LayoutProps) {
+export function Layout({ children, userEmail, onSignOut, onHome, nav }: LayoutProps) {
   return (
     <>
       <nav className="plai-nav">
@@ -18,6 +25,18 @@ export function Layout({ children, userEmail, onSignOut, onHome }: LayoutProps) 
         </button>
         {userEmail && (
           <div className="plai-nav-actions">
+            {nav?.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                className="plai-nav-link"
+                style={{ fontSize: 16, fontWeight: item.active ? 700 : 400 }}
+                aria-current={item.active ? 'page' : undefined}
+                onClick={item.onClick}
+              >
+                {item.label}
+              </button>
+            ))}
             <span className="lang-nav-email" style={{ fontSize: 16, color: 'var(--text2)' }}>{userEmail}</span>
             <button type="button" className="plai-nav-link" style={{ fontSize: 16 }} onClick={onSignOut}>
               Se déconnecter
