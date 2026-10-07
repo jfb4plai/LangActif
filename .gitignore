@@ -8,3 +8,4 @@ dist
 
 # copies locales contenant des identifiants de compte
 *.local.sql
+.vercel
