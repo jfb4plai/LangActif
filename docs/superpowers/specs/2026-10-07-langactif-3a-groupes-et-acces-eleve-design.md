@@ -121,3 +121,12 @@ Base légale et responsable de traitement (l'école, le pôle territorial, ou La
 ## 11. Références RISS
 
 Aucune référence scientifique n'est citée dans ce spec. Toute mention ultérieure dans l'app doit être vérifiée dans RISS avant publication.
+
+## 12. Révisions d'implémentation (2026-10-07, à la rédaction du plan)
+
+- **Fonctions enseignant en SQL.** Création de groupe, ajout de places, nouveau code, déblocage, archivage et régénération sont des RPC SQL `security definer` avec contrôle de propriété (même modèle que `lang_import_chapter`). Seules `student-login`, `student-me`, `student-logout` et `student-list-pseudos` sont des fonctions `api/*.ts`. Cela remplace le tableau du §7 pour les lignes enseignant.
+- **Code élève non unique dans le groupe** (le pseudo, unique, fait partie de la connexion). Remplace « unique dans le groupe » aux §2, §3 et §4.
+- **Limite de débit par IP au mieux** (mémoire d'une instance). La protection réelle est le blocage par pseudo.
+- **Plafonds :** 100 groupes par enseignant, 40 places actives par groupe.
+- **Hachage :** bcrypt (pgcrypto). Avec ~9 700 codes possibles, il ne résiste pas à une force brute hors ligne après une fuite de la base ; la protection réelle est la RLS, l'absence d'accès élève direct et le blocage.
+- **Page d'information élève (FALC)** : texte rédigé, à faire valider par les écoles avant diffusion (§8.3).
