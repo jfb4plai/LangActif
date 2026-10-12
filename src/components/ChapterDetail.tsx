@@ -1,6 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { deleteChapter, getChapter, type ChapterDetail as Detail } from '../lib/chapters';
+import { ArcadeGame, type ArcadeList } from '../arcade/ArcadeGame';
+import { MIN_WORDS } from '../arcade/session';
 import { langueLabel } from '../lib/labels';
 import { useFocusOnMount } from '../lib/useFocusOnMount';
 
@@ -25,6 +27,26 @@ export function ChapterDetail({ client, id, onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [playing, setPlaying] = useState(false);
+
+  const arcade = useMemo(() => {
+    if (!chapter) return null;
+    const lists: ArcadeList[] = chapter.lists.map((l) => ({
+      id: l.id,
+      nom: l.nom,
+      words: l.words.map((w) => ({
+        id: w.id,
+        fr: w.fr,
+        cible: w.cible,
+        article: w.article,
+        synonymesFr: w.synonymes_fr,
+        synonymesCible: w.synonymes_cible,
+      })),
+    }));
+    const audio: Record<string, string | null> = {};
+    chapter.lists.forEach((l) => l.words.forEach((w) => (audio[w.id] = w.audio_url)));
+    return { lists, audio };
+  }, [chapter]);
 
   useEffect(() => {
     let alive = true;
@@ -59,6 +81,19 @@ export function ChapterDetail({ client, id, onBack }: Props) {
 
   const wordCount = chapter.lists.reduce((n, l) => n + l.words.length, 0);
 
+  if (playing && arcade) {
+    return (
+      <ArcadeGame
+        lists={arcade.lists}
+        audioByWordId={arcade.audio}
+        studentId="essai-enseignant"
+        blocId={chapter.id}
+        preview
+        onExit={() => setPlaying(false)}
+      />
+    );
+  }
+
   return (
     <section>
       <button type="button" className="plai-btn-ghost" onClick={onBack} style={{ marginBottom: '1rem' }}>Retour aux chapitres</button>
@@ -67,6 +102,15 @@ export function ChapterDetail({ client, id, onBack }: Props) {
         <span className="lang-badge">{langueLabel(chapter.langue)}</span>
         <span style={{ color: 'var(--text2)' }}>Niveau {chapter.niveau}</span>
         <span style={{ color: 'var(--text2)' }}>{chapter.lists.length} listes, {wordCount} mots</span>
+      </div>
+
+      <div className="plai-card" style={{ marginBottom: '1rem' }}>
+        <h2 className="font-serif" style={{ fontSize: 18, marginBottom: 8 }}>Essayer ce chapitre en jeu</h2>
+        <p style={{ marginBottom: 10, color: 'var(--text2)' }}>
+          Mode arcade : l'élève tire sur la bonne traduction. Tu peux le tester avec tes propres mots avant de le proposer. Rien n'est enregistré.
+        </p>
+        <button type="button" className="plai-btn" disabled={wordCount < MIN_WORDS} onClick={() => setPlaying(true)}>Essayer en mode arcade</button>
+        {wordCount < MIN_WORDS && <p style={{ marginTop: 8 }}>Il faut au moins {MIN_WORDS} mots.</p>}
       </div>
 
       {chapter.lists.map((list) => (
