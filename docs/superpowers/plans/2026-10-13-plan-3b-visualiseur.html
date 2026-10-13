@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LangActif, plan 3b : visualiseur</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --teal:#0f6e56; --teal-bg:#e6f4ef; --orange:#f97316; --bg:#faf9f7; --text:#1f2933; --text2:#52606d; --border:#d9d4cc; --surface:#fff; --warn:#fff3e0; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'DM Sans',Arial,sans-serif; font-size:17px; line-height:1.55; }
+  header { background:var(--teal); color:#fff; padding:20px 16px; }
+  header h1 { margin:0; font-family:'DM Serif Display',Georgia,serif; font-weight:400; font-size:30px; }
+  header p { margin:6px 0 0; max-width:60em; }
+  nav { position:sticky; top:0; z-index:5; background:#fff; border-bottom:1px solid var(--border); display:flex; gap:4px; flex-wrap:wrap; padding:6px 12px; }
+  nav a { color:var(--teal); font-weight:600; text-decoration:none; padding:10px 12px; min-height:44px; border-radius:8px; display:inline-flex; align-items:center; }
+  nav a:hover, nav a:focus-visible { background:var(--teal-bg); outline:none; }
+  main { max-width:1060px; margin:0 auto; padding:8px 16px 48px; }
+  section { margin:32px 0; scroll-margin-top:64px; }
+  h2 { font-family:'DM Serif Display',Georgia,serif; font-weight:400; font-size:26px; color:var(--teal); margin:0 0 8px; }
+  h3 { font-size:19px; margin:18px 0 6px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+  .tag { display:inline-block; font-size:14px; font-weight:600; padding:2px 10px; border-radius:20px; background:var(--teal-bg); color:var(--teal); border:1px solid #b7dccf; margin-right:6px; }
+  .tag.o { background:var(--warn); color:#9a4a00; border-color:#f3cf9f; }
+  .tag.r { background:#fde8e6; color:#9b1c13; border-color:#f3b4ae; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:var(--text2); font-weight:600; }
+  svg { max-width:100%; height:auto; display:block; }
+  .tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .tabs button { font:inherit; font-weight:600; min-height:44px; padding:6px 16px; border-radius:10px; border:2px solid var(--teal); background:#fff; color:var(--teal); cursor:pointer; }
+  .tabs button[aria-selected="true"] { background:var(--teal); color:#fff; }
+  .tabs button:focus-visible, summary:focus-visible { outline:3px solid var(--orange); outline-offset:2px; }
+  .pane[hidden] { display:none; }
+  details { background:#fff; border:1px solid var(--border); border-radius:10px; padding:4px 14px; margin:8px 0; }
+  summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:600; }
+  code { background:#eef1f3; padding:1px 5px; border-radius:4px; font-size:15px; }
+  .mock { border:2px dashed var(--border); border-radius:14px; padding:14px; background:#fff; }
+  .mock .bar { background:var(--teal); color:#fff; padding:6px 12px; border-radius:8px 8px 0 0; font-weight:600; font-size:15px; margin:-14px -14px 12px; border-radius:12px 12px 0 0; }
+  .mock .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .btn { display:inline-flex; align-items:center; min-height:44px; padding:6px 16px; border-radius:10px; font-weight:600; border:2px solid var(--teal); background:var(--teal); color:#fff; }
+  .btn.ghost { background:#fff; color:var(--teal); }
+  .field { margin:10px 0; } .field b { display:block; } .field i { display:block; font-style:normal; color:var(--text2); font-size:16px; }
+  .field .box { border:2px solid var(--border); border-radius:8px; padding:8px 10px; background:#fff; }
+  .bar2 { height:16px; background:#e8e4dc; border-radius:8px; overflow:hidden; } .bar2 span { display:block; height:100%; background:var(--teal); }
+  .game { background:#0b0710; color:#fff; border-radius:10px; padding:10px; font-family:'Courier New',monospace; }
+  .game .stage { border:3px solid #39ff14; border-radius:6px; height:120px; position:relative; margin:8px 0; background:#050408; }
+  .game .c { position:absolute; top:14px; border:2px solid #ff007f; background:#111116; font:bold 15px Arial; padding:6px 8px; }
+  .game .ship { position:absolute; bottom:6px; left:46%; width:30px; height:16px; background:#39ff14; clip-path:polygon(50% 0,100% 100%,0 100%); }
+  .note { background:var(--warn); border:1px solid #f3cf9f; border-radius:10px; padding:12px 14px; }
+  .steps { counter-reset:s; list-style:none; padding:0; margin:0; }
+  .steps li { counter-increment:s; position:relative; padding:8px 8px 8px 46px; margin:6px 0; background:#fff; border:1px solid var(--border); border-radius:10px; }
+  .steps li::before { content:counter(s); position:absolute; left:10px; top:8px; width:28px; height:28px; border-radius:50%; background:var(--teal); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+  @media (max-width:520px){ header h1{font-size:25px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Plan 3b : travail assigné, mode arcade pour l'élève, journal</h1>
+  <p>Visualiseur du plan avant fusion. Ce que l'enseignant et l'élève verront, ce qui est stocké, ce qui est décidé, ce qui reste à valider.</p>
+</header>
+<nav aria-label="Sections">
+  <a href="#resume">En bref</a><a href="#parcours">Parcours</a><a href="#donnees">Données</a><a href="#ecrans">Écrans</a><a href="#decisions">Décisions</a><a href="#taches">Tâches</a><a href="#risques">Risques</a><a href="#hors">Hors périmètre</a>
+</nav>
+<main>
+
+<section id="resume">
+  <h2>En bref</h2>
+  <div class="grid">
+    <div class="card"><h3 style="margin-top:0">Pour l'enseignant</h3>
+      <p>Dans le détail d'un groupe, un bloc « Travail assigné » : choisir un chapitre (ou une liste), le sens, le nombre de mots par séance, la vitesse, une échéance. Un bouton « Voir comme un élève » ouvre le jeu sans rien enregistrer.</p></div>
+    <div class="card"><h3 style="margin-top:0">Pour l'élève</h3>
+      <p>Après connexion, l'accueil liste ses travaux avec la progression (« 12 cartes maîtrisées sur 40 »). « Jouer » lance le mode arcade Atari. Les mots à revoir passent avant les nouveaux.</p></div>
+    <div class="card"><h3 style="margin-top:0">Sous le capot</h3>
+      <p>Deux tables (<code>lang_assignments</code>, <code>lang_answers</code>), deux fonctions Vercel, une file locale qui n'abandonne aucune réponse. L'état Leitner est recalculé depuis le journal (code déjà testé).</p></div>
+  </div>
+  <p style="margin-top:12px"><span class="tag">10 tâches</span><span class="tag">1 migration SQL</span><span class="tag">2 fonctions Vercel</span><span class="tag o">1 accord JF avant la base</span></p>
+</section>
+
+<section id="parcours">
+  <h2>Parcours d'une réponse</h2>
+  <ol class="steps">
+    <li><b>L'enseignant assigne</b> un chapitre à un groupe (fonction SQL qui vérifie propriété, langue, taille : 3 à 300 mots).</li>
+    <li><b>L'élève ouvre l'accueil.</b> <code>/api/student-work</code> renvoie ses travaux, leurs mots et son journal des 90 derniers jours.</li>
+    <li><b>Le navigateur recalcule</b> les boîtes Leitner (<code>replayEvents</code>), choisit les cartes dues d'abord, puis des cartes nouvelles.</li>
+    <li><b>Il joue.</b> Chaque tir produit une réponse : <em>juste</em>, <em>faux</em> (mauvaise carte), <em>juste avec aide</em> (bonne carte après erreur) ou <em>sans réponse</em> (mot manqué).</li>
+    <li><b>La réponse entre dans une file locale</b> (avec un identifiant unique) puis part par lots de 50 vers <code>/api/student-answers</code>.</li>
+    <li><b>Le serveur enregistre sans doublon</b>, borne l'heure, ignore les lignes invalides, limite à 300 réponses par minute.</li>
+    <li><b>Coupure de réseau ?</b> La file garde tout et renvoie au retour du réseau. Session expirée : message, rien n'est perdu.</li>
+  </ol>
+</section>
+
+<section id="donnees">
+  <h2>Ce qui est stocké</h2>
+  <svg viewBox="0 0 900 330" role="img" aria-label="Schéma des tables : groupes, élèves, assignations, chapitres, mots, réponses">
+    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#52606d"/></marker></defs>
+    <g font-family="DM Sans,Arial" font-size="15">
+      <rect x="10" y="20" width="170" height="60" rx="8" fill="#e6f4ef" stroke="#0f6e56" stroke-width="2"/><text x="95" y="45" text-anchor="middle" font-weight="700">lang_groups</text><text x="95" y="66" text-anchor="middle" fill="#52606d">3a (existe)</text>
+      <rect x="10" y="150" width="170" height="60" rx="8" fill="#e6f4ef" stroke="#0f6e56" stroke-width="2"/><text x="95" y="175" text-anchor="middle" font-weight="700">lang_students</text><text x="95" y="196" text-anchor="middle" fill="#52606d">3a (existe)</text>
+      <rect x="260" y="20" width="200" height="60" rx="8" fill="#fff3e0" stroke="#f97316" stroke-width="2.5"/><text x="360" y="45" text-anchor="middle" font-weight="700">lang_assignments</text><text x="360" y="66" text-anchor="middle" fill="#9a4a00">NOUVEAU</text>
+      <rect x="260" y="150" width="200" height="60" rx="8" fill="#fff3e0" stroke="#f97316" stroke-width="2.5"/><text x="360" y="175" text-anchor="middle" font-weight="700">lang_answers</text><text x="360" y="196" text-anchor="middle" fill="#9a4a00">NOUVEAU (journal)</text>
+      <rect x="560" y="20" width="170" height="60" rx="8" fill="#e6f4ef" stroke="#0f6e56" stroke-width="2"/><text x="645" y="45" text-anchor="middle" font-weight="700">lang_chapters</text><text x="645" y="66" text-anchor="middle" fill="#52606d">+ lang_lists</text>
+      <rect x="560" y="150" width="170" height="60" rx="8" fill="#e6f4ef" stroke="#0f6e56" stroke-width="2"/><text x="645" y="175" text-anchor="middle" font-weight="700">lang_words</text><text x="645" y="196" text-anchor="middle" fill="#52606d">audio_url compris</text>
+      <g stroke="#52606d" stroke-width="2" marker-end="url(#a)" fill="none">
+        <path d="M260,50 L180,50"/><path d="M460,50 L560,50"/><path d="M360,150 L360,80"/><path d="M95,150 L95,80"/><path d="M260,180 L180,180"/><path d="M460,180 L560,180"/><path d="M645,80 L645,150"/>
+      </g>
+      <text x="220" y="42" text-anchor="middle" fill="#52606d" font-size="13">groupe</text>
+      <text x="510" y="42" text-anchor="middle" fill="#52606d" font-size="13">chapitre</text>
+      <text x="220" y="172" text-anchor="middle" fill="#52606d" font-size="13">élève</text>
+      <text x="510" y="172" text-anchor="middle" fill="#52606d" font-size="13">mot</text>
+    </g>
+    <text x="10" y="255" font-family="DM Sans,Arial" font-size="15" fill="#1f2933" font-weight="700">Effacements en cascade (droit à l'effacement)</text>
+    <text x="10" y="278" font-family="DM Sans,Arial" font-size="15" fill="#1f2933">Supprimer une place : ses réponses disparaissent. Supprimer un groupe : places, travaux, réponses.</text>
+    <text x="10" y="301" font-family="DM Sans,Arial" font-size="15" fill="#1f2933">Supprimer un chapitre : ses travaux et les réponses sur ses mots disparaissent aussi (décision D5).</text>
+    <text x="10" y="324" font-family="DM Sans,Arial" font-size="15" fill="#1f2933">Journal conservé 90 jours puis purgé chaque nuit (pg_cron, action JF).</text>
+  </svg>
+  <h3>Une ligne du journal</h3>
+  <p>Identifiant client, élève, mot, travail, sens, mode (<code>arcade_tir</code>), verdict, type d'erreur, aide, heure (bornée), carte choisie (100 caractères au plus), temps de réaction. Aucun nom, aucune adresse IP. L'enseignant ne peut pas encore lire le journal : la lecture arrive avec le tableau de bord (3d).</p>
+</section>
+
+<section id="ecrans">
+  <h2>Écrans (maquettes)</h2>
+  <div class="tabs" role="tablist" aria-label="Choisir une maquette">
+    <button role="tab" aria-selected="true" aria-controls="p1" id="t1">Enseignant : travail assigné</button>
+    <button role="tab" aria-selected="false" aria-controls="p2" id="t2">Élève : accueil</button>
+    <button role="tab" aria-selected="false" aria-controls="p3" id="t3">Élève : après une erreur</button>
+  </div>
+
+  <div class="pane" id="p1" role="tabpanel" aria-labelledby="t1">
+    <div class="mock">
+      <div class="bar">Mes groupes &gt; 3e S1 néerlandais &gt; Travail assigné</div>
+      <b style="font-size:19px">Travail assigné</b>
+      <div class="card" style="margin-top:8px">
+        <b>Unité 3 : l'école</b>
+        <div style="color:var(--text2)">3. L'école · Les deux sens · 8 mots par séance · À rendre dans 7 jours</div>
+        <div class="row"><span class="btn">Voir comme un élève</span><span class="btn ghost">Changer l'échéance</span><span class="btn ghost">Archiver</span><span class="btn ghost">Supprimer</span></div>
+      </div>
+      <b style="font-size:18px;display:block;margin-top:16px">Assigner un chapitre</b>
+      <div class="field"><b>Chapitre</b><div class="box">3. L'école (niveau S1)</div><i>Le travail porte sur les mots de ce chapitre. Si tu le modifies ou le réimportes plus tard, les élèves verront la version à jour.</i></div>
+      <div class="field"><b>Partie du chapitre</b><div class="box">Liste B : le local de classe (24 mots)</div><i>Au-delà de 300 mots, choisis une liste. Une assignation de 30 à 60 mots est un bon point de départ.</i></div>
+      <div class="field"><b>Titre affiché à l'élève</b><div class="box" style="color:var(--text2)">Unité 3 : l'école</div><i>Laisse vide pour reprendre le titre du chapitre. L'élève ne voit que ce titre.</i></div>
+      <div class="row"><span class="btn">Assigner</span></div>
+      <p style="margin-bottom:0;color:var(--text2)">Les champs Sens, Mots par séance, Vitesse de chute et Échéance suivent, chacun avec son texte d'aide.</p>
+    </div>
+  </div>
+
+  <div class="pane" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+    <div class="mock" style="max-width:460px">
+      <div class="bar">LangActif</div>
+      <b style="font-family:'DM Serif Display',Georgia,serif;font-size:26px;font-weight:400">Bonjour, Ourthe</b>
+      <div class="card" style="margin-top:10px">
+        <b style="font-size:19px">Unité 3 : l'école</b>
+        <div style="color:var(--text2)">24 mots · À rendre dans 7 jours</div>
+        <p style="margin:8px 0 4px">Cartes maîtrisées : <b>12</b> sur 48</p>
+        <div class="bar2" aria-hidden="true"><span style="width:25%"></span></div>
+        <div class="row"><span class="btn">Jouer</span></div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <b style="font-size:19px">Les voyelles longues</b>
+        <div style="color:var(--text2)">12 mots · Échéance dépassée depuis 3 jours</div>
+        <p style="margin:8px 0 4px">Cartes maîtrisées : <b>3</b> sur 12</p>
+        <div class="bar2" aria-hidden="true"><span style="width:25%"></span></div>
+        <div class="row"><span class="btn">Jouer</span></div>
+      </div>
+      <p style="color:var(--text2)">L'échéance est écrite en toutes lettres : la couleur ne porte jamais l'information seule. Pas de classement, pas de comparaison.</p>
+    </div>
+  </div>
+
+  <div class="pane" id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+    <div class="game" style="max-width:460px">
+      <div>ARCADE &nbsp; Points 20 &nbsp; Série 0 &nbsp; Maîtrisés 2/8</div>
+      <div style="border:2px solid #00e5ff;padding:6px 10px;margin-top:6px;font:bold 18px Arial;color:#ffd23f">Trouve la traduction de : le local</div>
+      <div class="stage"><span class="c" style="left:6%">de boekentas</span><span class="c" style="left:36%;border-color:#ff2a2a;background:#2a0a0a">✕ de gom</span><span class="c" style="left:66%">het klaslokaal</span><span class="ship"></span></div>
+      <div>Pas celle-ci. Cherche encore : la bonne carte est toujours là.</div>
+    </div>
+    <p style="color:var(--text2)">Une erreur ne coûte aucune vie. Si l'élève trouve ensuite la bonne carte, la réponse est notée « juste avec aide » (ni montée ni retour de boîte). S'il laisse passer le mot, l'écran de réponse s'affiche avec « Continuer », sans minuterie, et le mot revient une fois dans la séance.</p>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2>Décisions du plan</h2>
+  <table>
+    <thead><tr><th>#</th><th>Décision</th><th>État</th></tr></thead>
+    <tbody>
+      <tr><td>D1</td><td>Un seul mode en 3b : arcade (tir), sens vers la langue cible, vers le français, ou les deux.</td><td><span class="tag">proposé</span></td></tr>
+      <tr><td>D2</td><td>Une assignation = un chapitre ou une liste. Entre 3 et 300 mots, 20 travaux actifs par groupe au plus.</td><td><span class="tag">proposé</span></td></tr>
+      <tr><td>D3</td><td>Pas d'état Leitner stocké : recalculé depuis le journal. Une carte sans réponse depuis plus de 90 jours redevient nouvelle.</td><td><span class="tag o">à valider</span></td></tr>
+      <tr><td>D4</td><td>Journal conservé 90 jours puis supprimé chaque nuit. L'agrégation hebdomadaire est repoussée au 3d.</td><td><span class="tag o">à valider</span></td></tr>
+      <tr><td>D5</td><td>Supprimer un chapitre supprime aussi ses travaux et les réponses des élèves sur ses mots.</td><td><span class="tag o">à valider</span></td></tr>
+      <tr><td>D6</td><td>L'enseignant ne lit pas le journal en 3b (aucune politique de lecture). Le tableau de bord est le 3d.</td><td><span class="tag r">point de vigilance</span></td></tr>
+      <tr><td>D7</td><td>« Juste avec aide » : bonne carte après une erreur dans la même vague. Règle déjà codée.</td><td><span class="tag">acquis</span></td></tr>
+      <tr><td>D8</td><td>L'enseignant essaie le travail « comme un élève », sans écriture.</td><td><span class="tag">proposé</span></td></tr>
+      <tr><td>D9</td><td>Hors ligne minimal : file locale et renvoi, sans PWA (3c).</td><td><span class="tag">proposé</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note" style="margin-top:14px"><b>Point de vigilance avant une vraie classe.</b> Sans tableau de bord, l'enseignant ne voit pas les résultats alors que la page d'information élève dit qu'il le peut. Le plan recommande de faire un 3d minimal (élèves, dernier passage, cartes maîtrisées) avant d'inviter de vrais élèves, ou de retirer cette phrase en attendant.</div>
+</section>
+
+<section id="taches">
+  <h2>Les 10 tâches</h2>
+  <details open><summary>1. Migration SQL et script de vérification <span class="tag o" style="margin-left:8px">accord JF</span></summary>
+    <p>Tables, droits, fonctions enseignant et élève, purge. Script de vérification rejoué en local (PGlite) puis sur la base partagée : propriété, langue, tailles, idempotence, horodatage borné, limite de débit, effacement en cascade.</p></details>
+  <details><summary>2. Messages d'erreur et bibliothèque des assignations</summary><p>Messages français conservés, appels aux fonctions SQL, libellés d'échéance et de sens (tests).</p></details>
+  <details><summary>3. Séance d'arcade : sens par carte, cartes injouables</summary><p>Le sens « les deux » ; une carte sans fausse réponse distincte est écartée (deux mots de même traduction). Conversion chapitre vers jeu partagée.</p></details>
+  <details><summary>4. Le jeu accepte un travail assigné</summary><p>Réglages réduits pour l'élève (vitesse, effets, sons), séance vide expliquée.</p></details>
+  <details><summary>5. Deux fonctions Vercel</summary><p><code>student-work</code> (lecture) et <code>student-answers</code> (écriture par lots de 50). Autonomes, sans clé côté navigateur, tests.</p></details>
+  <details><summary>6. Client élève : appels, états recalculés, file locale</summary><p>Lots de 50, arrêt au premier échec, renvoi sans doublon, plafond de 2000 réponses, stockage corrompu ignoré.</p></details>
+  <details><summary>7. Accueil élève</summary><p>Travaux, progression, jeu, bandeau des réponses en attente, confirmation avant déconnexion si des réponses ne sont pas parties.</p></details>
+  <details><summary>8. Espace enseignant</summary><p>Bloc « Travail assigné », « Voir comme un élève », avertissement à la suppression d'un chapitre, mise à jour de la page d'information.</p></details>
+  <details><summary>9. Recette avec JF</summary><p>Onze vérifications, une action à la fois : assignation, jeu élève, journal en base, coupure réseau, session expirée, effacement, 375 px, clavier.</p></details>
+  <details><summary>10. Clôture</summary><p>Mémoire du projet, vignettes du portail et de jfb4plai.com, fusion dans <code>main</code> avec accord.</p></details>
+</section>
+
+<section id="risques">
+  <h2>Ce qui pourrait mal tourner (et le test qui le couvre)</h2>
+  <table>
+    <thead><tr><th>Situation</th><th>Comportement attendu</th><th>Test</th></tr></thead>
+    <tbody>
+      <tr><td>Deux mots de même traduction dans une liste</td><td>Jamais deux cartes justes, ni une carte seule</td><td>Tâche 3</td></tr>
+      <tr><td>Réseau instable : le même lot part deux fois</td><td>Aucun doublon, aucune erreur visible</td><td>Tâches 1 et 6</td></tr>
+      <tr><td>Horloge de l'appareil fausse</td><td>Heure bornée, ordre du rejeu préservé</td><td>Tâche 1</td></tr>
+      <tr><td>Chapitre supprimé ou réimporté après l'assignation</td><td>L'élève ne voit que ce qui existe ; une réponse sur un mot disparu est ignorée sans bloquer les autres</td><td>Tâches 1 et 6</td></tr>
+      <tr><td>Session expirée ou groupe archivé en pleine séance</td><td>Message clair, réponses gardées, rien de perdu</td><td>Tâches 6 et 7</td></tr>
+      <tr><td>Assignation impossible (moins de 3 mots, plus de 300, mauvaise langue)</td><td>Refus avec un message français lisible</td><td>Tâches 1 et 2</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="hors">
+  <h2>Ce que le 3b ne fait pas</h2>
+  <ul>
+    <li>Pas de tableau de bord ni de lecture du journal par l'enseignant (plan 3d).</li>
+    <li>Pas de PWA ni de précache hors ligne complet (plan 3c).</li>
+    <li>Pas d'audio généré : les mots sont lus seulement s'ils ont un fichier <code>https</code>, jamais par la voix du navigateur (plan 2b).</li>
+    <li>Pas d'autres modes (QCM, taper, roue de lettres), pas de regroupement de listes, pas de test blanc, pas de remédiation proposée.</li>
+    <li>Pas de notification à l'élève quand un travail est assigné.</li>
+  </ul>
+  <h3>Actions qui vous reviennent</h3>
+  <ol>
+    <li>Relire et appliquer la migration, puis exécuter le script de vérification sur la base partagée.</li>
+    <li>Activer <code>pg_cron</code> et planifier la purge du journal.</li>
+    <li>Faire relire la page d'information élève (90 jours de journal) par les écoles.</li>
+    <li>Participer à la recette navigateur.</li>
+  </ol>
+</section>
+
+</main>
+<script>
+  const tabs = document.querySelectorAll('[role="tab"]');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); document.getElementById(x.getAttribute('aria-controls')).hidden = x !== t; });
+  }));
+</script>
+</body>
+</html>
